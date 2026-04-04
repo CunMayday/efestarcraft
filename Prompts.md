@@ -686,6 +686,33 @@ This document tracks the conversation history, including the user's prompts, the
 
 ---
 
+## Prompt 79
+**User:** "they are unable to move, fix this"
+
+**AI Agent:** Codex
+
+**Summary:** Fixed move orders by allowing clicks on any world child and auto-selecting the squad when none is selected.
+
+---
+
+## Prompt 80
+**User:** "during battle mode they cannot move"
+
+**AI Agent:** Codex
+
+**Summary:** Removed the target gate in `handleWorldClick` so mission move orders always register regardless of click target.
+
+---
+
+## Prompt 81
+**User:** "during battle mode it doesn't load"
+
+**AI Agent:** Codex
+
+**Summary:** Spawned the first enemy wave immediately on mission start and scheduled subsequent waves to ensure battle loads.
+
+---
+
 ## Prompt 77
 **User:** "increase the size of all the images execpt rubric marine"
 
@@ -701,3 +728,18 @@ This document tracks the conversation history, including the user's prompts, the
 **AI Agent:** Codex
 
 **Summary:** Scaled G-Drill and Firebat sprite images to ~3x size (168px).
+
+---
+
+## Prompt 82
+**User:** "still, during battle mode i will click on an unit and then click somewhere else, but still, nothing happens"
+
+**AI Agent:** Codex
+
+**Summary:** Fixed mission move clicks by initializing `lastClickTime` and `lastClickPos` to prevent a ReferenceError on the first click.
+
+---
+
+## Checkpoint 11
+**Files:** `index.checkpoint-011.html`
+**Notes:** Snapshot after fixing mission move clicks by initializing click tracking vars.
