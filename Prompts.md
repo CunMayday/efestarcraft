@@ -1052,3 +1052,84 @@ This document tracks the conversation history, including the user's prompts, the
 **AI Agent:** Codex
 
 **Summary:** Made multi-select voice line use the same highest-priority unit that appears in the HUD.
+
+---
+
+## Checkpoint 23
+**Files:** `index.checkpoint-023.html`
+**Notes:** Snapshot after HUD voice priority and related refinements.
+
+---
+
+## Prompt 112
+**User:** "add a tutorial for the game"
+
+**AI Agent:** Codex
+
+**Summary:** Added a multi-step tutorial overlay with next/prev/skip controls and a button to reopen it.
+
+---
+
+## Prompt 113
+**User:** "make so that just because i killed the starting AI in the battle zone, it doesn't mean I win. send out more units to pressure me as time goes out. Also, the game name should be \"Efe's Unitled Starcraft Game\""
+
+**AI Agent:** Codex
+
+**Summary:** Added timed enemy pressure waves and updated the game title to "Efe's Unitled Starcraft Game".
+
+---
+
+## Prompt 114
+**User:** "lets add a new hero. the ships name will be Dreadmaw, and its special ability is that it can teleport accros the map. the hotkey is T, and it has 5 a second cooldown. Give a indicator that it is teleporting and where the teleport locaiton will be. the name for it is 4._Raven_Umojan.webp"
+
+**AI Agent:** Codex
+
+**Summary:** Added Dreadmaw hero with teleport ability (T hotkey, 5s cooldown), teleport targeting indicator/flash, and a new summon button using the Raven Umojan sprite.
+
+---
+
+## Prompt 115
+**User:** "the character for the Dreadmaw is facing the left, so if it moves left do not change it, if it moves right then flip it. also remove the background. I want the teleport to be instant, and also, if I manually click teleport i want it to also show a radious and where to jump"
+
+**AI Agent:** Codex
+
+**Summary:** Removed Dreadmaw background, added left-default/right-flip behavior, and ensured teleport shows an indicator radius at the target while remaining instant.
+
+---
+
+## Checkpoint 24
+**Files:** `index.checkpoint-024.html`
+**Notes:** Snapshot after Dreadmaw flipping and teleport indicator updates.
+
+---
+
+## Prompt 116
+**User:** "for the Draadmaws portrait, use character-animation(8).mp4"
+
+**AI Agent:** Codex
+
+**Summary:** Updated Dreadmaw's portrait video to `character-animation(8).mp4`.
+
+---
+
+## Checkpoint 25
+**Files:** `index.checkpoint-025.html`
+**Notes:** Snapshot after updating Dreadmaw portrait reference.
+
+---
+
+## Prompt 117
+**User:** "replace the dreadmaw portrait with character-animation(9).mp4."
+
+**AI Agent:** Codex
+
+**Summary:** Updated Dreadmaw's portrait video to `character-animation(9).mp4`.
+
+---
+
+## Prompt 118
+**User:** "ok. i want you to rotate bet ween using character-animation(9).mp4 and character-animation(8).mp4 for him"
+
+**AI Agent:** Codex
+
+**Summary:** Made Dreadmaw's portrait alternate between `character-animation(9).mp4` and `character-animation(8).mp4` each time he is shown in the HUD.

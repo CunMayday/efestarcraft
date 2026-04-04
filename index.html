@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarCraft x Pokémon Prototype</title>
+    <title>Efe's Unitled Starcraft Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for the sci-fi aesthetic */
@@ -230,6 +230,39 @@
             z-index: 9;
         }
 
+        .teleport-indicator {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            margin-left: -70px;
+            margin-top: -70px;
+            border-radius: 9999px;
+            border: 2px dashed rgba(147,51,234,0.8);
+            box-shadow: 0 0 14px rgba(147,51,234,0.6);
+            background: radial-gradient(circle, rgba(147,51,234,0.15) 0%, rgba(147,51,234,0.0) 70%);
+            pointer-events: none;
+            z-index: 18;
+        }
+
+        .teleport-flash {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            margin-left: -45px;
+            margin-top: -45px;
+            border-radius: 9999px;
+            border: 2px solid rgba(236,72,153,0.8);
+            box-shadow: 0 0 20px rgba(236,72,153,0.7);
+            pointer-events: none;
+            z-index: 18;
+            animation: teleport-flash 0.45s ease-out;
+        }
+
+        @keyframes teleport-flash {
+            0% { transform: scale(0.7); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
         .smoke-cloud {
             position: absolute;
             inset: -10px;
@@ -358,6 +391,22 @@
         </div>
     </div>
 
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center pointer-events-auto">
+        <div class="bg-slate-900 border-2 border-blue-400 p-6 rounded-lg max-w-lg w-full shadow-[0_0_30px_rgba(59,130,246,0.35)]">
+            <h3 class="text-xl font-bold text-blue-300 sci-fi-text mb-2 uppercase tracking-wider">Tutorial</h3>
+            <div class="h-px w-full bg-gradient-to-r from-blue-500 to-transparent mb-4"></div>
+            <p id="tutorial-text" class="text-slate-200 mb-6 text-base leading-snug"></p>
+            <div class="flex justify-between gap-3">
+                <button id="tutorial-prev" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded sci-fi-text font-bold text-slate-200 border border-slate-500">PREV</button>
+                <div class="flex gap-3">
+                    <button id="tutorial-skip" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded sci-fi-text font-bold text-slate-200 border border-slate-500">SKIP</button>
+                    <button id="tutorial-next" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold sci-fi-text transition-colors border border-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.35)]">NEXT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Game World / Map Area -->
     <div id="world" class="relative flex-grow grid-bg shadow-inner cursor-default" onclick="handleWorldClick(event)" style="touch-action: none; background-image: url('assets/terrainpixel.png'); background-size: cover; background-position: center;">
         <div class="ship-panels"></div>
@@ -409,6 +458,9 @@
                 <div>[ E ] Talk / Recruit</div>
                 <div class="text-red-400 font-bold mt-2 mb-1 border-b border-slate-600 pb-1 hidden" id="mission-controls-title">MISSION SYSTEMS</div>
             </div>
+            <button id="tutorial-open" class="text-[10px] text-blue-200 bg-blue-900/40 px-3 py-1 rounded border border-blue-500/40 hover:bg-blue-900/70 transition-colors">
+                Tutorial
+            </button>
         </div>
 
         <!-- Interaction Tooltip -->
@@ -537,6 +589,10 @@
                     <span class="font-bold text-sm text-white drop-shadow">G-Drill</span>
                     <span class="text-xs text-purple-300">Cost 10</span>
                 </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-pink-800 to-pink-900 border border-pink-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadmaw">
+                    <span class="font-bold text-sm text-white drop-shadow">Dreadmaw</span>
+                    <span class="text-xs text-pink-300">Cost 12</span>
+                </button>
                 <button class="ability-btn summon-btn bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadstar">
                     <span class="font-bold text-sm text-white drop-shadow">Fiji's Dreadstar</span>
                     <span class="text-xs text-emerald-300">Cost 15</span>
@@ -581,6 +637,12 @@
         const dialogText = document.getElementById('dialog-text');
         const dialogActionBtn = document.getElementById('dialog-action-btn');
         const interactionTooltip = document.getElementById('interaction-tooltip');
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        const tutorialText = document.getElementById('tutorial-text');
+        const tutorialPrev = document.getElementById('tutorial-prev');
+        const tutorialNext = document.getElementById('tutorial-next');
+        const tutorialSkip = document.getElementById('tutorial-skip');
+        const tutorialOpen = document.getElementById('tutorial-open');
         const hudDialogPanel = document.getElementById('hud-dialog-panel');
         const hudDialogName = document.getElementById('hud-dialog-name');
         const hudDialogText = document.getElementById('hud-dialog-text');
@@ -612,6 +674,8 @@
         let currentConversation = null;
         let currentConversationNode = null;
         let currentNpc = null;
+        let tutorialStep = 0;
+        let dreadmawPortraitToggle = false;
         let cultistSfxIndex = 0;
         let gdrillSfxIndex = 0;
         let marineSfxIndex = 0;
@@ -653,9 +717,13 @@
         let playerPoints = 0;
         let enemyPoints = 0;
         let enemySummonTimer = 0;
-        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15 };
+        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15, dreadmaw: 12 };
         let holdStartTime = null;
         let enemyZoneTimer = 0;
+        let pressureTimer = 0;
+        let teleportMode = false;
+        let teleportIndicator = null;
+        let teleportUnit = null;
 
         const COMBAT_TUNING = {
             speedMultiplier: 1.0,
@@ -751,6 +819,17 @@
                     { name: 'EMP', type: 'emp', duration: 5, cooldown: 15 }
                 ],
                 moves: [ { name: 'Dread Barrage', pp: 6, maxPp: 6 }, { name: 'Core Pulse', pp: 4, maxPp: 4 }, { name: 'Warp Anchor', pp: 3, maxPp: 3 }, { name: 'Event Horizon', pp: 2, maxPp: 2 } ]
+            },
+            'dreadmaw': {
+                name: 'Dreadmaw', level: 62, type: 'HERO / CASTER', typeColor: 'bg-pink-900 border-pink-400',
+                hp: 220, maxHp: 240, energy: 180, maxEnergy: 180,
+                desc: 'Teleport-capable strike ship. Bends space to reposition instantly.',
+                video: 'character-animation(9).mp4', speed: 90, attackRange: 180, attackDamage: 20, attackCooldown: 1.4,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_8px_rgba(236,72,153,0.6)]"><img src="assets/dreadmaw.webp" alt="Dreadmaw" class="dreadmaw-sprite w-[160px] h-[160px] object-contain" /></div>',
+                abilities: [
+                    { name: 'Teleport', type: 'teleport', duration: 0, cooldown: 5 }
+                ],
+                moves: [ { name: 'Void Lances', pp: 10, maxPp: 10 }, { name: 'Phase Cut', pp: 6, maxPp: 6 }, { name: 'Slipstream', pp: 4, maxPp: 4 }, { name: 'Rift Bloom', pp: 3, maxPp: 3 } ]
             }
         };
 
@@ -831,6 +910,7 @@
             selectUnit(playerAvatar, playerAvatar.element);
             renderHudDialogIdle();
             renderInventory();
+            setTimeout(() => showTutorial(0), 300);
 
             requestAnimationFrame(gameLoop);
         }
@@ -863,15 +943,27 @@
                 startConversation(currentInteractable);
             }
             if (key === 't') {
+                if (gameState === 'MISSION') {
+                    const caster = pickHudUnit(selectedUnits || []);
+                    if (caster && caster.templateKey === 'dreadmaw') {
+                        startTeleportMode(caster);
+                        return;
+                    }
+                }
                 if (!hudDialogActive && !conversationActive) {
                     startHudDialog(testHudDialogue);
                 } else {
                     nextHudDialog();
                 }
             }
-            if (key === 'escape' && (hudDialogActive || conversationActive)) {
-                closeHudDialog();
-                closeConversation();
+            if (key === 'escape') {
+                if (teleportMode) {
+                    cancelTeleportMode();
+                }
+                if (hudDialogActive || conversationActive) {
+                    closeHudDialog();
+                    closeConversation();
+                }
             }
         });
 
@@ -893,6 +985,10 @@
             }
             if (suppressSelectionClick) {
                 suppressSelectionClick = false;
+                return;
+            }
+            if (teleportMode) {
+                handleTeleportClick(e);
                 return;
             }
             if (isDraggingSelect) return;
@@ -971,6 +1067,15 @@
             dragBox.style.height = height + 'px';
         });
 
+        world.addEventListener('mousemove', (e) => {
+            if (!teleportMode || !teleportIndicator) return;
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            teleportIndicator.style.left = x + 'px';
+            teleportIndicator.style.top = y + 'px';
+        });
+
         world.addEventListener('mouseup', (e) => {
             if (!isDraggingSelect) return;
             const rect = world.getBoundingClientRect();
@@ -1030,6 +1135,80 @@
 
         function getZoneById(id) {
             return zones.find(z => z.id === id);
+        }
+
+        function startTeleportMode(unit) {
+            const ability = unit.abilities && unit.abilities.find(a => a.type === 'teleport');
+            if (!ability) return;
+            const now = performance.now() / 1000;
+            const cdEnd = unit.abilityCooldowns[ability.type] || 0;
+            if (now < cdEnd) return;
+            teleportMode = true;
+            teleportUnit = unit;
+            if (!teleportIndicator) {
+                teleportIndicator = document.createElement('div');
+                teleportIndicator.className = 'teleport-indicator';
+                world.appendChild(teleportIndicator);
+            }
+            teleportIndicator.style.left = unit.x + 'px';
+            teleportIndicator.style.top = unit.y + 'px';
+        }
+
+        function cancelTeleportMode() {
+            teleportMode = false;
+            teleportUnit = null;
+            if (teleportIndicator) {
+                teleportIndicator.remove();
+                teleportIndicator = null;
+            }
+        }
+
+        function handleTeleportClick(e) {
+            if (!teleportUnit) {
+                cancelTeleportMode();
+                return;
+            }
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const ability = teleportUnit.abilities && teleportUnit.abilities.find(a => a.type === 'teleport');
+            if (!ability) {
+                cancelTeleportMode();
+                return;
+            }
+            const now = performance.now() / 1000;
+            const cdEnd = teleportUnit.abilityCooldowns[ability.type] || 0;
+            if (now < cdEnd) {
+                cancelTeleportMode();
+                return;
+            }
+            teleportUnit.abilityCooldowns[ability.type] = now + ability.cooldown;
+            teleportUnit.abilityEnds[ability.type] = now;
+
+            const flash1 = document.createElement('div');
+            flash1.className = 'teleport-flash';
+            flash1.style.left = teleportUnit.x + 'px';
+            flash1.style.top = teleportUnit.y + 'px';
+            world.appendChild(flash1);
+            setTimeout(() => flash1.remove(), 500);
+
+            teleportUnit.x = x;
+            teleportUnit.y = y;
+            teleportUnit.targetX = x;
+            teleportUnit.targetY = y;
+            teleportUnit.state = 'IDLE';
+            teleportUnit.element.style.left = teleportUnit.x + 'px';
+            teleportUnit.element.style.top = teleportUnit.y + 'px';
+
+            const flash2 = document.createElement('div');
+            flash2.className = 'teleport-flash';
+            flash2.style.left = x + 'px';
+            flash2.style.top = y + 'px';
+            world.appendChild(flash2);
+            setTimeout(() => flash2.remove(), 500);
+
+            updateAbilityButtons(teleportUnit);
+            cancelTeleportMode();
         }
 
         function showClickIndicator(x, y, color) {
@@ -1368,6 +1547,53 @@
             renderHudDialogIdle();
         }
 
+        // --- Tutorial ---
+        const tutorialSteps = [
+            'Welcome to Sector Control. Capture zones A, B, and C to earn points each second (B is worth 3).',
+            'Select ships with drag-select or click. Click a zone to send your fleet there and hold it.',
+            'Spend points to summon new ships from the Unit Summoning panel. Fiji’s Dreadstar costs 15.',
+            'Win by holding all three zones for 30 seconds. Enemy AI will try to contest and capture too.'
+        ];
+
+        function showTutorial(step = 0) {
+            tutorialStep = Math.max(0, Math.min(tutorialSteps.length - 1, step));
+            tutorialOverlay.classList.remove('hidden');
+            renderTutorial();
+        }
+
+        function renderTutorial() {
+            tutorialText.innerText = tutorialSteps[tutorialStep] || '';
+            tutorialPrev.disabled = tutorialStep === 0;
+            tutorialNext.innerText = tutorialStep === tutorialSteps.length - 1 ? 'DONE' : 'NEXT';
+        }
+
+        function closeTutorial() {
+            tutorialOverlay.classList.add('hidden');
+        }
+
+        if (tutorialOpen) {
+            tutorialOpen.addEventListener('click', () => showTutorial(0));
+        }
+        if (tutorialPrev) {
+            tutorialPrev.addEventListener('click', () => {
+                tutorialStep = Math.max(0, tutorialStep - 1);
+                renderTutorial();
+            });
+        }
+        if (tutorialNext) {
+            tutorialNext.addEventListener('click', () => {
+                if (tutorialStep >= tutorialSteps.length - 1) {
+                    closeTutorial();
+                } else {
+                    tutorialStep += 1;
+                    renderTutorial();
+                }
+            });
+        }
+        if (tutorialSkip) {
+            tutorialSkip.addEventListener('click', () => closeTutorial());
+        }
+
         function playCultistSfx() {
             playCultistClickSfx();
         }
@@ -1536,6 +1762,11 @@
                 if (enemyZoneTimer > 2.5) {
                     enemyZoneTimer = 0;
                     directEnemyToZones();
+                }
+                pressureTimer += dt;
+                if (pressureTimer > 12) {
+                    pressureTimer = 0;
+                    sendPressureWave();
                 }
             }
 
@@ -1737,6 +1968,13 @@
                                 dreadImg.style.transform = `scaleX(${flip})`;
                             }
                         }
+                        if (unit.templateKey === 'dreadmaw') {
+                            const mawImg = unit.element.querySelector('.dreadmaw-sprite');
+                            if (mawImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                mawImg.style.transform = `scaleX(${flip})`;
+                            }
+                        }
                     }
                 }
             });
@@ -1873,7 +2111,7 @@
         }
 
         function tryEnemySummon() {
-            const options = ['cultist', 'marine', 'sorcerer', 'dreadstar'];
+            const options = ['cultist', 'marine', 'sorcerer', 'dreadstar', 'dreadmaw'];
             const affordable = options.filter(t => enemyPoints >= summonCosts[t]);
             if (affordable.length === 0) return;
             const choice = affordable[Math.floor(Math.random() * affordable.length)];
@@ -1895,6 +2133,19 @@
                 u.targetY = targetZone.y + targetZone.h / 2 + Math.floor(idx / 3) * 20;
                 u.state = 'MOVING';
             });
+        }
+
+        function sendPressureWave() {
+            if (gameState !== 'MISSION') return;
+            const baseX = 780;
+            const baseY = 120;
+            const units = ['cultist', 'cultist', 'marine'];
+            units.forEach((type, i) => {
+                spawnUnit(type, baseX + i * 30, baseY + i * 25, false);
+            });
+            if (playerPoints > 30 || enemyPoints > 30) {
+                spawnUnit('sorcerer', baseX + 90, baseY + 70, false);
+            }
         }
 
         function spawnWalls() {
@@ -2335,7 +2586,12 @@
             portraitVideo.classList.remove('hidden');
             scanlines.classList.remove('hidden');
             portraitVideo.pause();
-            portraitVideo.src = unitData.video || '';
+            if (unitData.templateKey === 'dreadmaw') {
+                dreadmawPortraitToggle = !dreadmawPortraitToggle;
+                portraitVideo.src = dreadmawPortraitToggle ? 'character-animation(9).mp4' : 'character-animation(8).mp4';
+            } else {
+                portraitVideo.src = unitData.video || '';
+            }
             portraitVideo.load();
             let playPromise = portraitVideo.play();
             if(playPromise !== undefined) playPromise.catch(e => console.log("Autoplay prevented"));
@@ -2419,6 +2675,9 @@
             }
             if (ability.type === 'emp') {
                 applyEmp(unit, ability.duration);
+            }
+            if (ability.type === 'teleport') {
+                startTeleportMode(unit);
             }
             updateAbilityButtons(unit);
         }
