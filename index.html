@@ -189,6 +189,10 @@
             cursor: crosshair !important;
         }
 
+        .flip-x {
+            transform: scaleX(-1);
+        }
+
         .ability-btn {
             background: linear-gradient(180deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9));
             border: 1px solid rgba(148,163,184,0.35);
@@ -214,6 +218,16 @@
             box-shadow: 0 0 12px rgba(14,165,233,0.6);
             pointer-events: none;
             animation: pulse-ring 1.6s ease-in-out infinite;
+        }
+
+        .shield-radius {
+            position: absolute;
+            border-radius: 9999px;
+            border: 2px solid rgba(59,130,246,0.7);
+            box-shadow: 0 0 16px rgba(59,130,246,0.6);
+            background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0.0) 70%);
+            pointer-events: none;
+            z-index: 9;
         }
 
         .smoke-cloud {
@@ -243,6 +257,47 @@
             background: rgba(34, 197, 94, 0.12);
             border: 1px dashed rgba(34, 197, 94, 0.45);
             z-index: 4;
+            pointer-events: none;
+        }
+
+        .zone {
+            position: absolute;
+            border: 2px dashed rgba(148, 163, 184, 0.6);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.1);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .zone-label {
+            position: absolute;
+            top: -18px;
+            left: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            color: #e2e8f0;
+        }
+
+        .zone-player {
+            border-color: rgba(34, 197, 94, 0.9);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+        }
+
+        .zone-enemy {
+            border-color: rgba(239, 68, 68, 0.9);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+        }
+
+        .select-box {
+            position: absolute;
+            border: 1px dashed rgba(59,130,246,0.8);
+            background: rgba(59,130,246,0.15);
+            z-index: 15;
             pointer-events: none;
         }
 
@@ -347,15 +402,12 @@
         
         <!-- Mission Top Right Buttons -->
         <div class="absolute top-12 right-4 z-30 flex flex-col items-end gap-2">
-            <div class="text-xs text-amber-200 bg-black/50 px-3 py-1 rounded backdrop-blur-sm pointer-events-none font-bold border border-amber-500/30">Recruits: <span id="squad-counter">0</span>/3</div>
+            <div class="text-xs text-amber-200 bg-black/50 px-3 py-1 rounded backdrop-blur-sm pointer-events-none font-bold border border-amber-500/30">Wing: <span id="squad-counter">0</span>/3</div>
             <div class="text-[10px] text-slate-400 bg-black/50 p-2 rounded mt-2 text-right pointer-events-none border border-slate-700">
                 <div class="text-amber-400 font-bold mb-1 border-b border-slate-600 pb-1">HUB CONTROLS</div>
                 <div>[ W A S D ] Move Avatar</div>
                 <div>[ E ] Talk / Recruit</div>
-                <div class="text-red-400 font-bold mt-2 mb-1 border-b border-slate-600 pb-1 hidden" id="mission-controls-title">MISSION CONTROLS</div>
-                <div class="hidden mission-controls">[ ` ] Select All Squad</div>
-                <div class="hidden mission-controls">[ A + M1 ] Attack Move</div>
-                <div class="hidden mission-controls">[ M1 ] Normal Move</div>
+                <div class="text-red-400 font-bold mt-2 mb-1 border-b border-slate-600 pb-1 hidden" id="mission-controls-title">MISSION SYSTEMS</div>
             </div>
         </div>
 
@@ -469,30 +521,31 @@
             <div class="mt-2 text-[10px] text-slate-500">Select 3 to deploy.</div>
         </div>
 
-        <!-- 5. Action / Moveset Section (Pokémon Style) -->
+        <!-- 5. Unit Summoning -->
         <div class="w-80 bg-slate-800 border-2 border-slate-700 rounded-lg p-2 flex flex-col">
-            <div class="text-xs text-center text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-600 pb-1">Combat Commands</div>
-            <div id="moves-grid" class="grid grid-cols-2 grid-rows-2 gap-2 flex-grow pointer-events-none opacity-50">
-                <button data-move-index="0" class="bg-gradient-to-b from-red-800 to-red-900 border border-red-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner">
-                    <span id="move-1-name" class="font-bold text-sm text-white drop-shadow">---</span>
-                    <span id="move-1-pp" class="text-xs text-red-300">PP --/--</span>
+            <div class="text-xs text-center text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-600 pb-1">Unit Summoning</div>
+            <div id="moves-grid" class="grid grid-cols-2 grid-rows-2 gap-2 flex-grow">
+                <button class="ability-btn summon-btn bg-gradient-to-b from-red-800 to-red-900 border border-red-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="cultist">
+                    <span class="font-bold text-sm text-white drop-shadow">Firebat</span>
+                    <span class="text-xs text-red-300">Cost 3</span>
                 </button>
-                <button data-move-index="1" class="bg-gradient-to-b from-blue-800 to-blue-900 border border-blue-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner">
-                    <span id="move-2-name" class="font-bold text-sm text-white drop-shadow">---</span>
-                    <span id="move-2-pp" class="text-xs text-blue-300">PP --/--</span>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-blue-800 to-blue-900 border border-blue-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="marine">
+                    <span class="font-bold text-sm text-white drop-shadow">Rubric</span>
+                    <span class="text-xs text-blue-300">Cost 6</span>
                 </button>
-                <button data-move-index="2" class="bg-gradient-to-b from-purple-800 to-purple-900 border border-purple-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner">
-                    <span id="move-3-name" class="font-bold text-sm text-white drop-shadow">---</span>
-                    <span id="move-3-pp" class="text-xs text-purple-300">PP --/--</span>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-purple-800 to-purple-900 border border-purple-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="sorcerer">
+                    <span class="font-bold text-sm text-white drop-shadow">G-Drill</span>
+                    <span class="text-xs text-purple-300">Cost 10</span>
                 </button>
-                <button data-move-index="3" class="bg-gradient-to-b from-slate-700 to-slate-800 border border-slate-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner">
-                    <span id="move-4-name" class="font-bold text-sm text-white drop-shadow">---</span>
-                    <span id="move-4-pp" class="text-xs text-slate-300">PP --/--</span>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadstar">
+                    <span class="font-bold text-sm text-white drop-shadow">Fiji's Dreadstar</span>
+                    <span class="text-xs text-emerald-300">Cost 15</span>
                 </button>
             </div>
             <div class="mt-2 text-xs text-slate-300 border-t border-slate-700 pt-2">
                 <div class="text-amber-300 font-bold mb-1">Mission Status</div>
                 <div id="mission-status">Stand by for deployment.</div>
+                <div id="mission-points" class="text-[11px] text-blue-200 mt-1">Points: 0 | Enemy: 0</div>
             </div>
         </div>
     </div>
@@ -516,7 +569,6 @@
         const unitTypeEl = document.getElementById('unit-type');
         const unitDescEl = document.getElementById('unit-desc');
         const movesGrid = document.getElementById('moves-grid');
-        const missionStatus = document.getElementById('mission-status');
         const abilityBtn1 = document.getElementById('ability-1');
         const abilityBtn2 = document.getElementById('ability-2');
         const squadCounter = document.getElementById('squad-counter');
@@ -536,6 +588,8 @@
         const hudDialogNext = document.getElementById('hud-dialog-next');
         const hudDialogClose = document.getElementById('hud-dialog-close');
         const hudDialogChoices = document.getElementById('hud-dialog-choices');
+        const missionStatus = document.getElementById('mission-status');
+        const missionPointsEl = document.getElementById('mission-points');
 
         // State Management
         let gameState = 'EXPLORATION'; // 'EXPLORATION' or 'MISSION'
@@ -561,6 +615,12 @@
         let cultistSfxIndex = 0;
         let gdrillSfxIndex = 0;
         let marineSfxIndex = 0;
+        let isDraggingSelect = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragBox = null;
+        let suppressWorldClick = false;
+        let suppressNextWorldClick = false;
+        let suppressSelectionClick = false;
         const keys = {};
         const battleOverlay = document.getElementById('battle-overlay');
         const battleTurnText = document.getElementById('battle-turn');
@@ -585,12 +645,17 @@
         let portraitStaticInterval = null;
         let portraitStaticTimeout = null;
         let wallElements = [];
-        let missionWave = 0;
-        let missionWavesTotal = 3;
-        let nextWaveTime = 0;
         let missionActive = false;
         let barrierElements = [];
         let rampElements = [];
+        let zones = [];
+        let zoneElements = [];
+        let playerPoints = 0;
+        let enemyPoints = 0;
+        let enemySummonTimer = 0;
+        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15 };
+        let holdStartTime = null;
+        let enemyZoneTimer = 0;
 
         const COMBAT_TUNING = {
             speedMultiplier: 1.0,
@@ -622,53 +687,70 @@
             { x: 450, y: 360, w: 90, h: 60 }
         ];
 
+        const ZONE_DATA = [
+            { id: 'A', x: 80, y: 120, w: 200, h: 150, value: 1 },
+            { id: 'B', x: 480, y: 260, w: 260, h: 190, value: 3 },
+            { id: 'C', x: 840, y: 120, w: 200, h: 150, value: 1 }
+        ];
+
         // Base Unit Templates
         const unitTemplates = {
             'player_avatar': {
-                name: 'Squad Leader', level: 99, type: 'HERO', typeColor: 'bg-green-900 border-green-400',
-                hp: 300, maxHp: 300, energy: 100, maxEnergy: 100,
-                desc: 'You. The commander of this operation.',
-                video: 'chaosmarineportrait.mp4', speed: 150, attackRange: 120, attackDamage: 20, attackCooldown: 1.0,
+                name: 'Flight Lead', level: 99, type: 'CAPITAL / COMMAND', typeColor: 'bg-green-900 border-green-400',
+                hp: 320, maxHp: 320, energy: 120, maxEnergy: 120,
+                desc: 'Flagship pilot coordinating the wing with tactical uplinks.',
+                video: 'chaosmarineportrait.mp4', speed: 160, attackRange: 140, attackDamage: 22, attackCooldown: 0.9,
                 spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_5px_5px_rgba(74,222,128,0.8)]"><svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16" fill="#166534" stroke="#4ade80" stroke-width="2"/><path d="M24 10 L32 30 L16 30 Z" fill="#4ade80"/></svg></div>',
-                moves: [ { name: 'Command', pp: 99, maxPp: 99 }, { name: 'Strike', pp: 99, maxPp: 99 }, null, null ]
+                moves: [ { name: 'Command Uplink', pp: 99, maxPp: 99 }, { name: 'Broadside', pp: 99, maxPp: 99 }, null, null ]
             },
             'commander_npc': {
-                name: 'Base Commander', level: '??', type: 'NPC', typeColor: 'bg-yellow-900 border-yellow-400',
+                name: 'Dockmaster', level: '??', type: 'NPC', typeColor: 'bg-yellow-900 border-yellow-400',
                 hp: 9999, maxHp: 9999, energy: 0, maxEnergy: 0,
-                desc: 'The official in charge of deploying squads to the battlefield.',
+                desc: 'Orbital operations chief coordinating launches and resupply.',
                 video: 'character-animation(1).mp4', speed: 0, attackRange: 0, attackDamage: 0, attackCooldown: 99,
                 spriteSvg: '<div class="w-full h-full flex items-center justify-center drop-shadow-[0_6px_6px_rgba(234,179,8,0.7)]"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="10" width="36" height="40" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/><rect x="18" y="16" width="24" height="18" rx="3" fill="#111827" stroke="#f59e0b" stroke-width="2"/><circle cx="24" cy="25" r="3" fill="#fcd34d"/><circle cx="36" cy="25" r="3" fill="#fcd34d"/><rect x="23" y="36" width="14" height="4" rx="2" fill="#78350f"/></svg></div>',
                 moves: []
             },
             'marine': {
-                name: 'Rubric Marine', level: 42, type: 'PSYCHIC / STEEL', typeColor: 'bg-purple-900 border-purple-400',
-                hp: 150, maxHp: 150, energy: 80, maxEnergy: 100,
-                desc: 'A walking suit of power armor filled with the dust of a sorcerer.',
-                video: 'character-animation(4).mp4', speed: 80, attackRange: 150, attackDamage: 15, attackCooldown: 1.2,
-                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_6px_6px_rgba(59,130,246,0.6)]"><img src="assets/marine.png" alt="Rubric Marine" class="w-14 h-14 object-contain" /></div>',
+                name: 'Rubric Marine', level: 42, type: 'ESCORT / GUNSHIP', typeColor: 'bg-purple-900 border-purple-400',
+                hp: 180, maxHp: 180, energy: 90, maxEnergy: 110,
+                desc: 'Escort gunship with stabilized cannons and defensive countermeasures.',
+                video: 'character-animation(4).mp4', speed: 95, attackRange: 170, attackDamage: 16, attackCooldown: 1.1,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_6px_6px_rgba(59,130,246,0.6)]"><img src="assets/marine.png" alt="Rubric Marine" class="marine-sprite w-14 h-14 object-contain" /></div>',
                 abilities: [
                     { name: 'Smoke Bomb', type: 'smoke', duration: 4, cooldown: 10 }
                 ],
-                moves: [ { name: 'Inferno Bolter', pp: 20, maxPp: 20 }, { name: 'Warp Flame', pp: 10, maxPp: 10 }, { name: 'All Is Dust', pp: 5, maxPp: 5 }, { name: 'Smite', pp: 15, maxPp: 15 } ]
+                moves: [ { name: 'Rail Burst', pp: 20, maxPp: 20 }, { name: 'Ion Spray', pp: 10, maxPp: 10 }, { name: 'Chaff Cloud', pp: 5, maxPp: 5 }, { name: 'Kinetic Lance', pp: 15, maxPp: 15 } ]
             },
             'sorcerer': {
-                name: 'G-Drill', level: 55, type: 'PSYCHIC / DARK', typeColor: 'bg-indigo-900 border-indigo-400',
-                hp: 110, maxHp: 120, energy: 200, maxEnergy: 200,
-                desc: 'Leader of the squad, wielding terrible magics.',
-                video: 'character-animation.mp4', speed: 90, attackRange: 200, attackDamage: 25, attackCooldown: 1.8,
-                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_8px_rgba(76,29,149,0.6)]"><img src="assets/gdrill.png" alt="G-Drill" class="w-[168px] h-[168px] object-contain" /></div>',
+                name: 'G-Drill', level: 55, type: 'BATTLESHIP / HEAVY', typeColor: 'bg-indigo-900 border-indigo-400',
+                hp: 220, maxHp: 240, energy: 160, maxEnergy: 160,
+                desc: 'Heavy battleship with layered plating and a forward plasma core.',
+                video: 'character-animation.mp4', speed: 85, attackRange: 220, attackDamage: 28, attackCooldown: 1.7,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_8px_rgba(76,29,149,0.6)]"><img src="assets/gdrill.png" alt="G-Drill" class="gdrill-sprite w-[168px] h-[168px] object-contain" /></div>',
                 abilities: [
-                    { name: 'Shield', type: 'shield', duration: 3, cooldown: 8 }
+                    { name: 'Defensive Countermeasures', type: 'shield', duration: 6, cooldown: 8 }
                 ],
-                moves: [ { name: 'Doombolt', pp: 10, maxPp: 10 }, { name: 'Force Stave', pp: 15, maxPp: 15 }, { name: 'Presage', pp: 5, maxPp: 5 }, { name: 'Weaver of Fates', pp: 5, maxPp: 5 } ]
+                moves: [ { name: 'Plasma Lance', pp: 10, maxPp: 10 }, { name: 'Ion Sweep', pp: 15, maxPp: 15 }, { name: 'Target Uplink', pp: 5, maxPp: 5 }, { name: 'Singularity Burst', pp: 5, maxPp: 5 } ]
             },
             'cultist': {
-                name: 'Firebat', level: 12, type: 'NORMAL / DARK', typeColor: 'bg-red-900 border-red-400',
-                hp: 35, maxHp: 40, energy: 10, maxEnergy: 20,
-                desc: 'A mortal follower of the dark gods. Weak, but dangerous in large swarms.',
-                video: 'character-animation(2).mp4', speed: 120, attackRange: 100, attackDamage: 5, attackCooldown: 0.8,
+                name: 'Firebat', level: 12, type: 'STRIKE / INTERCEPTOR', typeColor: 'bg-red-900 border-red-400',
+                hp: 60, maxHp: 70, energy: 20, maxEnergy: 30,
+                desc: 'Fast strike craft that burns through hulls at close range.',
+                video: 'character-animation(2).mp4', speed: 140, attackRange: 110, attackDamage: 7, attackCooldown: 0.75,
                 spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-jitter drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]"><img src="assets/firebat.png" alt="Firebat" class="w-[168px] h-[168px] object-contain" /></div>',
-                moves: [ { name: 'Autogun Burst', pp: 30, maxPp: 30 }, { name: 'Brutal Assault', pp: 25, maxPp: 25 }, { name: 'Dark Devotion', pp: 5, maxPp: 5 }, { name: 'Flee', pp: 10, maxPp: 10 } ]
+                moves: [ { name: 'Afterburner Burst', pp: 30, maxPp: 30 }, { name: 'Hull Scorch', pp: 25, maxPp: 25 }, { name: 'Evasive Roll', pp: 5, maxPp: 5 }, { name: 'Break Away', pp: 10, maxPp: 10 } ]
+            },
+            'dreadstar': {
+                name: "Fiji's Dreadstar", level: 70, type: 'HERO / DREAD', typeColor: 'bg-emerald-900 border-emerald-400',
+                hp: 320, maxHp: 360, energy: 220, maxEnergy: 220,
+                desc: 'Hero dreadship with experimental drives. Abilities classified.',
+                video: 'character-animation(7).mp4', speed: 70, attackRange: 240, attackDamage: 32, attackCooldown: 2.0,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_10px_rgba(16,185,129,0.6)]"><img src="assets/dreadstar.webp" alt="Fiji\'s Dreadstar" class="dreadstar-sprite w-[180px] h-[180px] object-contain" /></div>',
+                abilities: [
+                    { name: 'EMP', type: 'emp', duration: 5, cooldown: 15 }
+                ],
+                moves: [ { name: 'Dread Barrage', pp: 6, maxPp: 6 }, { name: 'Core Pulse', pp: 4, maxPp: 4 }, { name: 'Warp Anchor', pp: 3, maxPp: 3 }, { name: 'Event Horizon', pp: 2, maxPp: 2 } ]
             }
         };
 
@@ -714,8 +796,14 @@
             hpBarContainer.appendChild(hpBarFill);
             el.appendChild(hpBarContainer);
 
+            el.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                suppressSelectionClick = true;
+            });
+
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
+                suppressNextWorldClick = true;
                 stopAllVoices();
                 playUnitVoice(unit);
                 if (gameState === 'MISSION' && unit.faction === 'enemy') {
@@ -751,11 +839,11 @@
             slot.addEventListener('click', () => selectBattleUnit(idx));
         });
 
-        document.querySelectorAll('#moves-grid button').forEach(btn => {
+        document.querySelectorAll('.summon-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!battleActive) return;
-                const idx = parseInt(btn.getAttribute('data-move-index'), 10);
-                handleBattleMove(idx);
+                if (gameState !== 'MISSION') return;
+                const type = btn.getAttribute('data-summon');
+                summonUnit(type);
             });
         });
 
@@ -795,6 +883,19 @@
         });
 
         function handleWorldClick(e) {
+            if (suppressWorldClick) {
+                suppressWorldClick = false;
+                return;
+            }
+            if (suppressNextWorldClick) {
+                suppressNextWorldClick = false;
+                return;
+            }
+            if (suppressSelectionClick) {
+                suppressSelectionClick = false;
+                return;
+            }
+            if (isDraggingSelect) return;
             if (gameState === 'MISSION' && selectedUnits.length > 0) {
                 const rect = world.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -806,14 +907,23 @@
                 lastClickTime = clickMs;
                 lastClickPos = { x, y };
 
+                const zone = getZoneAt(x, y);
                 selectedUnits.forEach((unit, index) => {
                     const offsetX = (index % 3) * 40 - 40;
                     const offsetY = Math.floor(index / 3) * 40;
                     
-                    unit.targetX = x + offsetX;
-                    unit.targetY = y + offsetY;
+                    if (zone) {
+                        unit.holdZoneId = zone.id;
+                        unit.targetX = zone.x + zone.w / 2 + offsetX;
+                        unit.targetY = zone.y + zone.h / 2 + offsetY;
+                    } else {
+                        unit.holdZoneId = null;
+                        unit.targetX = x + offsetX;
+                        unit.targetY = y + offsetY;
+                    }
                     unit.state = isDouble ? 'ATTACK_MOVING' : 'MOVING';
                     unit.combatTarget = null;
+                    unit.forcedMove = !isDouble;
                     unit.manualOrderUntil = now + (isDouble ? 0.8 : 1.6);
                 });
                 
@@ -829,6 +939,99 @@
             }
         }
 
+        world.addEventListener('mousedown', (e) => {
+            if (gameState !== 'MISSION') return;
+            if (e.button !== 0) return;
+            const rect = world.getBoundingClientRect();
+            dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            isDraggingSelect = true;
+            if (!dragBox) {
+                dragBox = document.createElement('div');
+                dragBox.className = 'select-box';
+                world.appendChild(dragBox);
+            }
+            dragBox.style.left = dragStart.x + 'px';
+            dragBox.style.top = dragStart.y + 'px';
+            dragBox.style.width = '0px';
+            dragBox.style.height = '0px';
+        });
+
+        world.addEventListener('mousemove', (e) => {
+            if (!isDraggingSelect || !dragBox) return;
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const left = Math.min(dragStart.x, x);
+            const top = Math.min(dragStart.y, y);
+            const width = Math.abs(dragStart.x - x);
+            const height = Math.abs(dragStart.y - y);
+            dragBox.style.left = left + 'px';
+            dragBox.style.top = top + 'px';
+            dragBox.style.width = width + 'px';
+            dragBox.style.height = height + 'px';
+        });
+
+        world.addEventListener('mouseup', (e) => {
+            if (!isDraggingSelect) return;
+            const rect = world.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            const left = Math.min(dragStart.x, endX);
+            const top = Math.min(dragStart.y, endY);
+            const width = Math.abs(dragStart.x - endX);
+            const height = Math.abs(dragStart.y - endY);
+            if (dragBox) dragBox.remove();
+            dragBox = null;
+            isDraggingSelect = false;
+
+            if (width < 6 && height < 6) {
+                handleWorldClick(e);
+                return;
+            }
+
+            selectUnitsInRect(left, top, left + width, top + height);
+            suppressWorldClick = true;
+        });
+
+        function selectUnitsInRect(x1, y1, x2, y2) {
+            deselectAll();
+            const picked = allEntities.filter(u => u.faction === 'player' && u.hp > 0)
+                .filter(u => u.x >= x1 && u.x <= x2 && u.y >= y1 && u.y <= y2);
+            if (picked.length === 0) return;
+            selectedUnits = picked;
+            selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
+            const hudUnit = pickHudUnit(selectedUnits);
+            updateConsoleUI(hudUnit);
+            stopAllVoices();
+            if (selectedUnits.length === 1) {
+                playUnitVoice(selectedUnits[0]);
+            } else {
+                const talker = hudUnit || selectedUnits[0];
+                playUnitVoice(talker);
+            }
+        }
+
+        function pickHudUnit(units) {
+            if (!units || units.length === 0) return null;
+            const alive = units.filter(u => u && u.hp > 0);
+            if (alive.length === 0) return units[0];
+            const heroes = alive.filter(u => (u.type || '').toUpperCase().includes('HERO') || u.templateKey === 'dreadstar');
+            if (heroes.length > 0) return heroes[0];
+            const gdrill = alive.find(u => u.templateKey === 'sorcerer');
+            if (gdrill) return gdrill;
+            const withAbility = alive.find(u => u.abilities && u.abilities.length > 0);
+            if (withAbility) return withAbility;
+            return alive[0];
+        }
+
+        function getZoneAt(x, y) {
+            return zones.find(z => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h);
+        }
+
+        function getZoneById(id) {
+            return zones.find(z => z.id === id);
+        }
+
         function showClickIndicator(x, y, color) {
             const ind = document.createElement('div');
             ind.className = 'absolute w-4 h-4 rounded-full border-2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 animate-ping';
@@ -841,9 +1044,9 @@
 
         // --- HUD Dialog System (Bottom Console) ---
         const testHudDialogue = [
-            { speaker: 'HQ', text: 'Welcome to Outpost 7. This HUD channel is for story dialogue.' },
-            { speaker: 'Squad Leader', text: 'Understood. We are syncing comms and scanning the area.' },
-            { speaker: 'HQ', text: 'Press E near units to recruit. Press T to advance this test dialogue.' }
+            { speaker: 'FleetCom', text: 'Outpost 7 to flight lead. Ship-to-ship comms are live.' },
+            { speaker: 'Flight Lead', text: 'Copy. Powering sensors and aligning the nav grid.' },
+            { speaker: 'FleetCom', text: 'Press E near allied ships to add them to your wing. Press T to advance this test transmission.' }
         ];
 
         function startHudDialog(sequence) {
@@ -1071,10 +1274,10 @@
                     nodes: {
                         intro: {
                             speaker: npc.name,
-                            text: hasSquad ? 'Ready to deploy your squad to Sector 4?' : 'Recruit 3 units before deployment.',
+                            text: hasSquad ? 'Three ships are fueled. Launch to Sector 4?' : 'We need 3 ships in the wing before launch.',
                             choices: [
-                                { text: 'Engage Mission', action: 'startMission', disabled: !hasSquad },
-                                { text: 'Not Yet', action: 'close' }
+                                { text: 'Launch Mission', action: 'startMission', disabled: !hasSquad },
+                                { text: 'Stand Down', action: 'close' }
                             ]
                         }
                     }
@@ -1087,11 +1290,11 @@
                 nodes: {
                     intro: {
                         speaker: npc.name,
-                text: canRecruit ? 'Want to join the squad?' : 'Your squad is full.',
+                text: canRecruit ? 'Need another ship in the wing?' : 'Wing is at capacity.',
                         choices: [
-                            { text: 'Recruit', action: 'recruit', disabled: !canRecruit },
-                            { text: 'Who are you?', next: 'info' },
-                            { text: 'Nevermind', action: 'close' }
+                            { text: 'Add to Wing', action: 'recruit', disabled: !canRecruit },
+                            { text: 'Ship Specs', next: 'info' },
+                            { text: 'Stand Down', action: 'close' }
                         ]
                     },
                     info: {
@@ -1175,8 +1378,8 @@
             dialogTitle.innerText = npc.name;
             
             if (npc.templateKey === 'commander_npc') {
-                dialogText.innerText = "Commander: Are you ready to deploy your squad to Sector 4? The enemies are waiting.";
-                dialogActionBtn.innerText = "ENGAGE MISSION";
+                dialogText.innerText = "Dockmaster: Ready to launch the wing to Sector 4? Hostile contacts are on the scope.";
+                dialogActionBtn.innerText = "LAUNCH MISSION";
                 dialogActionBtn.className = "px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold sci-fi-text transition-colors border border-red-400 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
                 dialogActionBtn.disabled = false;
                 dialogActionBtn.onclick = () => {
@@ -1184,14 +1387,14 @@
                     startMission();
                 };
             } else {
-                dialogText.innerText = 'Would you like to recruit this ' + npc.name + ' to your squad? (' + playerSquad.length + '/3 members)';
+                dialogText.innerText = 'Add ' + npc.name + ' to your wing? (' + playerSquad.length + '/3 ships)';
                 if (playerSquad.length >= 3) {
                     dialogActionBtn.disabled = true;
-                    dialogActionBtn.innerText = "SQUAD FULL";
+                    dialogActionBtn.innerText = "WING FULL";
                     dialogActionBtn.className = "px-4 py-2 bg-gray-600 text-white rounded font-bold sci-fi-text border border-gray-400 cursor-not-allowed";
                 } else {
                     dialogActionBtn.disabled = false;
-                    dialogActionBtn.innerText = "RECRUIT";
+                    dialogActionBtn.innerText = "ADD TO WING";
                     dialogActionBtn.className = "px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold sci-fi-text transition-colors border border-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]";
                     dialogActionBtn.onclick = () => {
                         recruitUnit(npc);
@@ -1228,7 +1431,7 @@
             if (unitsToSelect.length === 0) return;
             selectedUnits = [...unitsToSelect];
             selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
-            updateConsoleUI(selectedUnits[0]);
+            updateConsoleUI(pickHudUnit(selectedUnits));
         }
 
         function selectUnit(unitData, element) {
@@ -1247,7 +1450,7 @@
         // --- Missions ---
         function startMission() {
             if (playerSquad.length < 3) {
-                showHudNotice('Recruit 3 units before deployment.');
+                showHudNotice('Assemble 3 ships before launch.');
                 return;
             }
             gameState = 'MISSION';
@@ -1260,11 +1463,10 @@
             hideTerrainBarriers();
 
             missionActive = true;
-            missionWave = 0;
-            const now = performance.now() / 1000;
-            spawnWave(1);
-            missionWave = 1;
-            nextWaveTime = now + 8;
+            playerPoints = 0;
+            enemyPoints = 0;
+            enemySummonTimer = 0;
+            initZones();
             updateMissionStatus();
             
             modeText.innerText = 'COMBAT MISSION';
@@ -1307,6 +1509,11 @@
                 u.element.style.left = u.x + 'px';
                 u.element.style.top = u.y + 'px';
             });
+
+            // Initial enemy patrol
+            spawnUnit('cultist', 760, 140, false);
+            spawnUnit('cultist', 780, 200, false);
+            spawnUnit('marine', 720, 240, false);
             
             selectAllPlayerUnits();
         }
@@ -1318,11 +1525,17 @@
             const now = performance.now() / 1000;
 
             if (gameState === 'MISSION' && missionActive) {
-                if (missionWave < missionWavesTotal && now >= nextWaveTime) {
-                    spawnWave(missionWave + 1);
-                    missionWave += 1;
-                    updateMissionStatus();
-                    nextWaveTime = now + 8;
+                updateZones(dt);
+                updateMissionStatus();
+                enemySummonTimer += dt;
+                if (enemySummonTimer > 4) {
+                    enemySummonTimer = 0;
+                    tryEnemySummon();
+                }
+                enemyZoneTimer += dt;
+                if (enemyZoneTimer > 2.5) {
+                    enemyZoneTimer = 0;
+                    directEnemyToZones();
                 }
             }
 
@@ -1375,15 +1588,33 @@
             // Entity logic
             allEntities.forEach(unit => {
                 updateAbilityStates(unit, now);
+                if (unit.empActive) {
+                    unit.state = 'IDLE';
+                    return;
+                }
                 // Block RTS movement during exploration
                 if (gameState === 'EXPLORATION' && unit.faction === 'player') {
                     unit.state = 'IDLE';
                     return;
                 }
 
+                if (gameState === 'MISSION' && unit.holdZoneId && !unit.combatTarget) {
+                    const zone = getZoneById(unit.holdZoneId);
+                    if (zone) {
+                        const inside = unit.x >= zone.x && unit.x <= zone.x + zone.w && unit.y >= zone.y && unit.y <= zone.y + zone.h;
+                        if (!inside && unit.state === 'IDLE') {
+                            unit.targetX = zone.x + zone.w / 2;
+                            unit.targetY = zone.y + zone.h / 2;
+                            unit.state = 'MOVING';
+                        }
+                    }
+                }
+
                 // 1. Target Acquisition (All units auto-acquire in MISSION mode)
                 if (gameState === 'MISSION' && unit.state !== 'ATTACKING') {
-                    if (unit.manualOrderUntil && now < unit.manualOrderUntil) {
+                    if (unit.forcedMove && unit.state === 'MOVING') {
+                        // Ignore auto-targeting while executing a direct move order
+                    } else if (unit.manualOrderUntil && now < unit.manualOrderUntil) {
                         // Respect manual move orders briefly
                     } else {
                     const enemyFaction = unit.faction === 'player' ? 'enemy' : 'player';
@@ -1459,12 +1690,53 @@
                         } else {
                             unit.state = 'IDLE';
                         }
+                        if (unit.forcedMove) unit.forcedMove = false;
                     } else {
                         const move = getNextPosition(unit, dx / dist, dy / dist, dt);
                         unit.x = move.x;
                         unit.y = move.y;
                         unit.element.style.left = unit.x + 'px';
                         unit.element.style.top = unit.y + 'px';
+
+                        if (unit.templateKey === 'sorcerer') {
+                            const gdrillImg = unit.element.querySelector('.gdrill-sprite');
+                            if (gdrillImg) {
+                                const flip = dx < 0 ? -1 : 1;
+                                let tilt = 0;
+                                let bob = 0;
+                                if (dy < -6) {
+                                    tilt = -4;
+                                    bob = -4;
+                                } else if (dy > 6) {
+                                    tilt = 4;
+                                    bob = 4;
+                                }
+                                gdrillImg.style.transform = `scaleX(${flip}) rotate(${tilt}deg) translateY(${bob}px)`;
+                            }
+                        }
+                        if (unit.templateKey === 'marine') {
+                            const marineImg = unit.element.querySelector('.marine-sprite');
+                            if (marineImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                let tilt = 0;
+                                let bob = 0;
+                                if (dy < -6) {
+                                    tilt = -4;
+                                    bob = -4;
+                                } else if (dy > 6) {
+                                    tilt = 4;
+                                    bob = 4;
+                                }
+                                marineImg.style.transform = `scaleX(${flip}) rotate(${tilt}deg) translateY(${bob}px)`;
+                            }
+                        }
+                        if (unit.templateKey === 'dreadstar') {
+                            const dreadImg = unit.element.querySelector('.dreadstar-sprite');
+                            if (dreadImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                dreadImg.style.transform = `scaleX(${flip})`;
+                            }
+                        }
                     }
                 }
             });
@@ -1480,29 +1752,149 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function spawnWave(wave) {
-            const baseX = 750 + (wave * 30);
-            const baseY = 120 + (wave * 40);
-            const count = 2 + wave;
-            for (let i = 0; i < count; i++) {
-                spawnUnit('cultist', baseX + i * 30, baseY + i * 20, false);
+        function initZones() {
+            zoneElements.forEach(el => el.remove());
+            zoneElements = [];
+            zones = ZONE_DATA.map(zone => ({
+                ...zone,
+                owner: 'neutral',
+                capture: 0
+            }));
+            zones.forEach(zone => {
+                const el = document.createElement('div');
+                el.className = 'zone';
+                el.style.left = zone.x + 'px';
+                el.style.top = zone.y + 'px';
+                el.style.width = zone.w + 'px';
+                el.style.height = zone.h + 'px';
+                const label = document.createElement('div');
+                label.className = 'zone-label';
+                label.innerText = 'ZONE ' + zone.id;
+                el.appendChild(label);
+                world.appendChild(el);
+                zoneElements.push(el);
+                zone.element = el;
+                zone.label = label;
+            });
+        }
+
+        function updateZones(dt) {
+            const captureRate = 18;
+            zones.forEach(zone => {
+                let playerCount = 0;
+                let enemyCount = 0;
+                allEntities.forEach(u => {
+                    if (u.hp <= 0) return;
+                    if (u.x >= zone.x && u.x <= zone.x + zone.w && u.y >= zone.y && u.y <= zone.y + zone.h) {
+                        if (u.faction === 'player') playerCount += 1;
+                        if (u.faction === 'enemy') enemyCount += 1;
+                    }
+                });
+
+                if (playerCount > 0 && enemyCount === 0) {
+                    zone.capture = Math.max(-100, Math.min(100, zone.capture + captureRate * dt));
+                } else if (enemyCount > 0 && playerCount === 0) {
+                    zone.capture = Math.max(-100, Math.min(100, zone.capture - captureRate * dt));
+                }
+
+                const prevOwner = zone.owner;
+                if (zone.capture >= 100) zone.owner = 'player';
+                else if (zone.capture <= -100) zone.owner = 'enemy';
+                else zone.owner = prevOwner;
+
+                if (prevOwner !== zone.owner) {
+                    zone.element.classList.remove('zone-player', 'zone-enemy');
+                    if (zone.owner === 'player') zone.element.classList.add('zone-player');
+                    if (zone.owner === 'enemy') zone.element.classList.add('zone-enemy');
+                }
+
+                if (zone.owner === 'player') playerPoints += zone.value * dt;
+                if (zone.owner === 'enemy') enemyPoints += zone.value * dt;
+            });
+            const allPlayer = zones.length > 0 && zones.every(z => z.owner === 'player');
+            if (allPlayer) {
+                if (!holdStartTime) holdStartTime = performance.now() / 1000;
+            } else {
+                holdStartTime = null;
             }
-            if (wave >= 2) spawnUnit('sorcerer', baseX + 80, baseY + 100, false);
-            if (wave >= 3) spawnUnit('marine', baseX + 120, baseY + 140, false);
         }
 
         function updateMissionStatus() {
-            if (!missionStatus) return;
+            if (!missionStatus || !missionPointsEl) return;
             if (gameState !== 'MISSION') {
                 missionStatus.innerText = 'Stand by for deployment.';
+                missionPointsEl.innerText = 'Points: 0 | Enemy: 0';
                 return;
             }
-            const enemiesLeft = allEntities.filter(e => e.faction === 'enemy').length;
-            if (missionWave >= missionWavesTotal && enemiesLeft === 0) {
-                missionStatus.innerText = 'Objective complete. Extract to base.';
-                return;
+            const zoneText = zones.map(z => z.id + ':' + (z.owner === 'player' ? 'P' : z.owner === 'enemy' ? 'E' : '-')).join(' ');
+            missionStatus.innerText = 'Zones ' + zoneText;
+            const holdLeft = holdStartTime ? Math.max(0, 30 - ((performance.now() / 1000) - holdStartTime)) : null;
+            const holdText = holdLeft !== null ? ' | Hold: ' + holdLeft.toFixed(1) + 's' : '';
+            const playerRate = zones.filter(z => z.owner === 'player').reduce((sum, z) => sum + z.value, 0);
+            const enemyRate = zones.filter(z => z.owner === 'enemy').reduce((sum, z) => sum + z.value, 0);
+            missionPointsEl.innerText =
+                'Points: ' + Math.floor(playerPoints) + ' (+' + playerRate + '/s)' +
+                ' | Enemy: ' + Math.floor(enemyPoints) + ' (+' + enemyRate + '/s)' +
+                holdText;
+            updateSummonButtons();
+
+            if (holdStartTime && (performance.now() / 1000) - holdStartTime >= 30) {
+                missionActive = false;
+                sectorText.innerText = 'VICTORY - SECTORS SECURED';
+                sectorText.className = 'sci-fi-text tracking-widest text-green-400 font-bold text-lg';
+                showHudNotice('Victory! You held all three sectors for 30 seconds.');
             }
-            missionStatus.innerText = 'Wave ' + missionWave + '/' + missionWavesTotal + ' | Hostiles: ' + enemiesLeft;
+        }
+
+        function updateSummonButtons() {
+            document.querySelectorAll('.summon-btn').forEach(btn => {
+                const type = btn.getAttribute('data-summon');
+                const cost = summonCosts[type] || 0;
+                const enabled = gameState === 'MISSION' && playerPoints >= cost;
+                btn.disabled = !enabled;
+                btn.classList.toggle('opacity-50', !enabled);
+            });
+        }
+
+        function summonUnit(type) {
+            const cost = summonCosts[type];
+            if (!cost || playerPoints < cost) return;
+            playerPoints -= cost;
+            const baseX = 140;
+            const baseY = 260;
+            const unit = spawnUnit(
+                type,
+                baseX + Math.random() * 80 - 40,
+                baseY + Math.random() * 120 - 60,
+                true
+            );
+            playerSquad.push(unit);
+            updateMissionStatus();
+        }
+
+        function tryEnemySummon() {
+            const options = ['cultist', 'marine', 'sorcerer', 'dreadstar'];
+            const affordable = options.filter(t => enemyPoints >= summonCosts[t]);
+            if (affordable.length === 0) return;
+            const choice = affordable[Math.floor(Math.random() * affordable.length)];
+            enemyPoints -= summonCosts[choice];
+            spawnUnit(choice, 820 + Math.random() * 40 - 20, 160 + Math.random() * 40 - 20, false);
+        }
+
+        function directEnemyToZones() {
+            if (zones.length === 0) return;
+            const enemyUnits = allEntities.filter(u => u.faction === 'enemy' && u.hp > 0);
+            if (enemyUnits.length === 0) return;
+            const targetZone = zones
+                .filter(z => z.owner !== 'enemy')
+                .sort((a, b) => b.value - a.value)[0] || zones[0];
+            enemyUnits.forEach((u, idx) => {
+                if (u.combatTarget || u.forcedMove) return;
+                u.holdZoneId = targetZone.id;
+                u.targetX = targetZone.x + targetZone.w / 2 + (idx % 3) * 20 - 20;
+                u.targetY = targetZone.y + targetZone.h / 2 + Math.floor(idx / 3) * 20;
+                u.state = 'MOVING';
+            });
         }
 
         function spawnWalls() {
@@ -1564,38 +1956,9 @@
 
         function getNextPosition(unit, dirX, dirY, dt) {
             const speed = unit.speed * dt;
-            if (unit.avoidTimer && unit.avoidTimer > 0) {
-                unit.avoidTimer -= dt;
-                const ax = unit.avoidDir.x * speed;
-                const ay = unit.avoidDir.y * speed;
-                const nx = unit.x + ax;
-                const ny = unit.y + ay;
-                if (!collidesWithWall(nx, ny)) {
-                    return { x: nx, y: ny };
-                }
-            }
-
-            let nx = unit.x + dirX * speed;
-            let ny = unit.y + dirY * speed;
-            if (!collidesWithWall(nx, ny)) return { x: nx, y: ny };
-
-            // Try perpendicular sidestep
-            const perp = { x: -dirY, y: dirX };
-            unit.avoidDir = perp;
-            unit.avoidTimer = 0.35;
-            nx = unit.x + perp.x * speed;
-            ny = unit.y + perp.y * speed;
-            if (!collidesWithWall(nx, ny)) return { x: nx, y: ny };
-
-            // Try opposite perpendicular
-            const perp2 = { x: dirY, y: -dirX };
-            unit.avoidDir = perp2;
-            unit.avoidTimer = 0.35;
-            nx = unit.x + perp2.x * speed;
-            ny = unit.y + perp2.y * speed;
-            if (!collidesWithWall(nx, ny)) return { x: nx, y: ny };
-
-            return { x: unit.x, y: unit.y };
+            const nx = unit.x + dirX * speed;
+            const ny = unit.y + dirY * speed;
+            return { x: nx, y: ny };
         }
 
         function updateCohesion() {
@@ -1606,6 +1969,8 @@
             center.x /= players.length;
             center.y /= players.length;
             players.forEach(u => {
+                if (u.holdZoneId) return;
+                if (u.templateKey === 'dreadstar') return;
                 if (u.combatTarget || u.state === 'ATTACKING' || u.state === 'ATTACK_MOVING') return;
                 const d = Math.hypot(u.x - center.x, u.y - center.y);
                 if (d > COMBAT_TUNING.cohesionRange && u.state === 'IDLE') {
@@ -1685,7 +2050,7 @@
             closeConversation();
             closeHudDialog();
             if (activeSquad.length < 3) {
-                showHudNotice('Need 3 selected units to battle.');
+                showHudNotice('Select 3 ships before sortie.');
                 return;
             }
             battleActive = true;
@@ -1727,7 +2092,7 @@
 
         function startBattleWithCommander() {
             if (activeSquad.length < 3) {
-                showHudNotice('Select 3 recruits in Inventory first.');
+                showHudNotice('Select 3 ships in Inventory first.');
                 return;
             }
             // Commander triggers battle without removing him from the hub
@@ -1859,6 +2224,10 @@
             if (target.smokeActive) damage *= 0.7;
             target.hp -= damage;
             createLaser(attacker, target);
+            if (attacker.templateKey === 'dreadstar') {
+                createLaser(attacker, target, -6);
+                createLaser(attacker, target, 6);
+            }
 
             // Return fire / target swap
             if (gameState === 'MISSION' && target.hp > 0) {
@@ -1882,14 +2251,14 @@
             if (target.hp <= 0) die(target);
         }
 
-        function createLaser(attacker, target) {
+        function createLaser(attacker, target, offsetY = 0) {
             const line = document.createElement('div');
             line.className = 'absolute z-20 pointer-events-none origin-left';
             line.style.backgroundColor = attacker.faction === 'enemy' ? '#a855f7' : '#ef4444';
             line.style.boxShadow = '0 0 8px ' + (attacker.faction === 'enemy' ? '#a855f7' : '#ef4444');
             line.style.height = '4px';
             line.style.left = attacker.x + 'px';
-            line.style.top = attacker.y + 'px';
+            line.style.top = (attacker.y + offsetY) + 'px';
             
             const dx = target.x - attacker.x;
             const dy = target.y - attacker.y;
@@ -1960,24 +2329,7 @@
             
             unitDescEl.innerText = unitData.desc;
             updateAbilityButtons(unitData);
-
-            if (isBattle) {
-                movesGrid.classList.remove('pointer-events-none', 'opacity-50');
-            } else {
-                movesGrid.classList.add('pointer-events-none');
-                movesGrid.classList.add('opacity-50');
-            }
-            for (let i = 0; i < 4; i++) {
-                const moveNameEl = document.getElementById('move-' + (i+1) + '-name');
-                const movePpEl = document.getElementById('move-' + (i+1) + '-pp');
-                if (i < 2 && unitData.moves[i]) {
-                    moveNameEl.innerText = unitData.moves[i].name;
-                    movePpEl.innerText = 'PP ' + unitData.moves[i].pp + '/' + unitData.moves[i].maxPp;
-                } else {
-                    moveNameEl.innerText = 'LOCKED';
-                    movePpEl.innerText = 'UNLOCK';
-                }
-            }
+            updateSummonButtons();
 
             portraitPlaceholder.classList.add('hidden');
             portraitVideo.classList.remove('hidden');
@@ -2018,12 +2370,7 @@
             
             unitDescEl.innerText = 'Click on a unit to view details. Use W,A,S,D to walk and E to recruit.';
             updateAbilityButtons(null);
-
-            movesGrid.classList.add('pointer-events-none', 'opacity-50');
-            for(let i=0; i<4; i++) {
-                document.getElementById('move-' + (i+1) + '-name').innerText = '---';
-                document.getElementById('move-' + (i+1) + '-pp').innerText = 'PP --/--';
-            }
+            updateSummonButtons();
 
             portraitPlaceholder.classList.remove('hidden');
             portraitVideo.classList.add('hidden');
@@ -2063,12 +2410,78 @@
                 unit.shieldActive = true;
                 unit.canAttack = false;
                 applyShieldFx(unit);
+                showShieldRadius(unit, ability.duration);
+                applyTeamShield(unit, ability.duration);
             }
             if (ability.type === 'smoke') {
                 unit.smokeActive = true;
                 applySmokeFx(unit);
             }
+            if (ability.type === 'emp') {
+                applyEmp(unit, ability.duration);
+            }
             updateAbilityButtons(unit);
+        }
+
+        function applyEmp(caster, duration) {
+            const now = performance.now() / 1000;
+            const radius = Math.max(180, caster.attackRange * 1.1);
+            const ring = document.createElement('div');
+            ring.className = 'shield-radius';
+            ring.style.borderColor = 'rgba(34,197,94,0.7)';
+            ring.style.boxShadow = '0 0 18px rgba(34,197,94,0.7)';
+            ring.style.width = (radius * 2) + 'px';
+            ring.style.height = (radius * 2) + 'px';
+            ring.style.left = '50%';
+            ring.style.top = '50%';
+            ring.style.transform = 'translate(-50%, -50%)';
+            if (caster.element) caster.element.appendChild(ring);
+            setTimeout(() => ring.remove(), Math.max(500, duration * 1000));
+
+            allEntities.forEach(u => {
+                if (u.hp <= 0) return;
+                if (u.templateKey === 'dreadstar') return;
+                const d = Math.hypot(u.x - caster.x, u.y - caster.y);
+                if (d <= radius) {
+                    u.empActive = true;
+                    u.empEnds = now + duration;
+                    u.canAttack = false;
+                    u.state = 'IDLE';
+                }
+            });
+        }
+
+        function showShieldRadius(unit, duration) {
+            if (!unit || !unit.element) return;
+            const existing = unit.element.querySelector('.shield-radius');
+            if (existing) existing.remove();
+
+            const ring = document.createElement('div');
+            ring.className = 'shield-radius';
+            const radius = Math.max(140, unit.attackRange * 1.2);
+            ring.style.width = (radius * 2) + 'px';
+            ring.style.height = (radius * 2) + 'px';
+            ring.style.left = '50%';
+            ring.style.top = '50%';
+            ring.style.transform = 'translate(-50%, -50%)';
+            unit.element.appendChild(ring);
+            setTimeout(() => ring.remove(), Math.max(500, duration * 1000));
+        }
+
+        function applyTeamShield(caster, duration) {
+            if (!caster || caster.templateKey !== 'sorcerer') return;
+            const now = performance.now() / 1000;
+            const radius = Math.max(160, caster.attackRange * 1.1);
+            allEntities.forEach(u => {
+                if (u.faction !== caster.faction || u === caster || u.hp <= 0) return;
+                const d = Math.hypot(u.x - caster.x, u.y - caster.y);
+                if (d <= radius) {
+                    u.shieldActive = true;
+                    u.shieldFromGdrill = true;
+                    u.abilityEnds['shieldAura'] = now + duration;
+                    applyShieldFx(u);
+                }
+            });
         }
 
         function updateAbilityStates(unit, now) {
@@ -2078,9 +2491,18 @@
                 unit.canAttack = true;
                 removeShieldFx(unit);
             }
+            if (unit.shieldFromGdrill && now >= (unit.abilityEnds['shieldAura'] || 0)) {
+                unit.shieldFromGdrill = false;
+                unit.shieldActive = false;
+                removeShieldFx(unit);
+            }
             if (unit.smokeActive && now >= (unit.abilityEnds['smoke'] || 0)) {
                 unit.smokeActive = false;
                 removeSmokeFx(unit);
+            }
+            if (unit.empActive && now >= (unit.empEnds || 0)) {
+                unit.empActive = false;
+                unit.canAttack = true;
             }
         }
 

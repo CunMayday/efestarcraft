@@ -743,3 +743,312 @@ This document tracks the conversation history, including the user's prompts, the
 ## Checkpoint 11
 **Files:** `index.checkpoint-011.html`
 **Notes:** Snapshot after fixing mission move clicks by initializing click tracking vars.
+
+---
+
+## Prompt 83
+**User:** "replace the G-Drill character with this"
+
+**AI Agent:** Codex
+
+**Summary:** Replaced `assets/gdrill.png` with the provided battleship image and removed the black background for transparency.
+
+---
+
+## Prompt 84
+**User:** "good! make the image way bigger though"
+
+**AI Agent:** Codex
+
+**Summary:** Increased the G-Drill sprite size to 280px for a much larger on-map appearance.
+
+---
+
+## Prompt 85
+**User:** "ok, return the G-Drill to normal size. It is a space ship, so when it is moving to the right, the character will stay the same. if it moves to the left, the character will be reversed"
+
+**AI Agent:** Codex
+
+**Summary:** Restored G-Drill to normal size (168px) and added left/right flipping for its sprite when moving left.
+
+---
+
+## Checkpoint 12
+**Files:** `index.checkpoint-012.html`
+**Notes:** Snapshot after restoring G-Drill size and adding left-move sprite flip.
+
+---
+
+## Prompt 86
+**User:** "when G-Drill is moving up, i want him to slightly dip up, and likewise with down"
+
+**AI Agent:** Codex
+
+**Summary:** Added dynamic tilt/bob on G-Drill while moving up/down, combined with left/right flip.
+
+---
+
+## Prompt 87
+**User:** "this is going to be a space ship combat game, so update all the stats/character descriptions as well as dialogue awnsers"
+
+**AI Agent:** Codex
+
+**Summary:** Re-themed unit stats, roles, and move names for spaceship combat and updated HUD/test dialogue, recruit/launch conversations, and launch notices to match the space setting.
+
+---
+
+## Prompt 88
+**User:** "now do the same with the rubric marine, update the character and change the way the unit is facing/pointing depending on where they are going. replace the current image with 5._Battlecruiser_Tyrador.webp"
+
+**AI Agent:** Codex
+
+**Summary:** Replaced the Rubric Marine sprite with `5._Battlecruiser_Tyrador.webp` and added directional rotation so the ship points where it moves.
+
+---
+
+## Prompt 89
+**User:** "remove the background for the rubric ship"
+
+**AI Agent:** Codex
+
+**Summary:** Removed the near-black background from the Rubric ship sprite for transparency.
+
+---
+
+## Checkpoint 13
+**Files:** `index.checkpoint-013.html`
+**Notes:** Snapshot after updating ship theming, G-Drill movement tilt, Rubric ship rotation, and background removal.
+
+---
+
+## Prompt 90
+**User:** "ok, replace the rubric marine character with tyradorflipped.png"
+
+**AI Agent:** Codex
+
+**Summary:** Replaced `assets/marine.png` with `tyradorflipped.png` for the Rubric Marine sprite.
+
+---
+
+## Prompt 91
+**User:** "ok. with this one, if it is facing to the right, the sprite stays the same. if it moves to the left, you reverse it. if it is moving up, then dip the character up and same with down"
+
+**AI Agent:** Codex
+
+**Summary:** Updated the Rubric ship sprite to flip on left movement and add subtle up/down dip while moving.
+
+---
+
+## Prompt 92
+**User:** "ok, it is on the wrong way, so the sprite at the start faces left, so keep it the same but flip it if it is on the right"
+
+**AI Agent:** Codex
+
+**Summary:** Inverted Rubric ship flip logic so the default faces left and only flips when moving right.
+
+---
+
+## Checkpoint 14
+**Files:** `index.checkpoint-014.html`
+**Notes:** Snapshot after Rubric ship facing logic update and tyradorflipped sprite swap.
+
+---
+
+## Prompt 93
+**User:** "i want you to give an indicator when G-Drill uses his shield (i want you to rename it \"Defensive Countermeasures\". when i click on it i want (in blue) a indicator of the radius of the shield"
+
+**AI Agent:** Codex
+
+**Summary:** Renamed G-Drill's shield ability to "Defensive Countermeasures" and added a blue radius indicator that appears on activation.
+
+---
+
+## Prompt 94
+**User:** "make his shield be open for longer. change combat so that my characters do not path find"
+
+**AI Agent:** Codex
+
+**Summary:** Extended G-Drill defensive countermeasures duration to 6s and simplified combat movement to direct travel without pathfinding avoidance.
+
+---
+
+## Checkpoint 15
+**Files:** `index.checkpoint-015.html`
+**Notes:** Snapshot after longer G-Drill countermeasures and disabling pathfinding.
+
+---
+
+## Prompt 95
+**User:** "ok. now lets get into how the game works. when you are in battle mode there are 3 zones. A B AND C. A and C give 1 point per sec and B gives 3. You need to capture a zone while stopping the enemy from getting the other. after you get points, you can summon units.  replace combat commands with unit summoning."
+
+**AI Agent:** Codex
+
+**Summary:** Added capture zones A/B/C with point generation, replaced combat commands with unit summoning, and added point-based summoning with enemy responses.
+
+---
+
+## Checkpoint 16
+**Files:** `index.checkpoint-016.html`
+**Notes:** Snapshot after adding zone control, point generation, and summoning system.
+
+---
+
+## Prompt 97
+**User:** "i want to add heroes with special abilities. this one is called \"Fiji's Dreadstar\" we will get into abilities later. but you spend the points you get on units. Fiji will cost 15 points. You win thegame by controlling all 3 sectors for 30 seconds. make the zones farther from each other. also, remove the background for the rubric marine character"
+
+**AI Agent:** Codex
+
+**Summary:** Added Fiji's Dreadstar hero summon (15 points), spaced the zones further apart, added a 30s full-control victory condition, and removed the Rubric ship background.
+
+---
+
+## Checkpoint 17
+**Files:** `index.checkpoint-017.html`
+**Notes:** Snapshot after adding Dreadstar hero, zone spacing, and 30s full-control victory.
+
+---
+
+## Prompt 99
+**User:** "ok, make fijis dreadstar character be changed intop Fijisdreadstar.webp. make his portrait be changed to character-animation(7).mp4"
+
+**AI Agent:** Codex
+
+**Summary:** Added `assets/dreadstar.webp` for Fiji's Dreadstar sprite and set its portrait to `character-animation(7).mp4`.
+
+---
+
+## Prompt 100
+**User:** "remove the background for the dreadstar. when it spawns it is facing left. if it is moving to the left it stays the same, but if it moves to the right flip it. with the rubric marine, when it spawns in it is facing left. so when it moves left do not change it. if it moves right then flip it."
+
+**AI Agent:** Codex
+
+**Summary:** Removed the Dreadstar background and added left-default/right-flip logic for Dreadstar and Rubric ship sprites.
+
+---
+
+## Prompt 101
+**User:** "one problem I have is that there is no drag select. also when I want it so that after i claim a sector, i don't need to have a unit sitting there."
+
+**AI Agent:** Codex
+
+**Summary:** Added drag-selection in mission mode and updated zone capture logic to persist ownership without requiring a unit to stay on the zone.
+
+---
+
+## Checkpoint 18
+**Files:** `index.checkpoint-018.html`
+**Notes:** Snapshot after adding drag-select and persistent zone ownership.
+
+---
+
+## Prompt 102
+**User:** "ok, i don't like how the enemy can just constantly remake units in battle mode, so make them follow the point system too. i want the dreadstar to have a special ability. EMP. in a radius around him, he completley stops ALL units for 5 seconds, including friendlies."
+
+**AI Agent:** Codex
+
+**Summary:** Added Dreadstar EMP ability (5s full stop for all units in radius) and slowed enemy summoning cadence so it adheres to point pacing.
+
+---
+
+## Prompt 103
+**User:** "when G-Drill uses his ability, i only want him to protect his teammates. When i spawn units, i want them to spawn at my side of the map. also, when i drag click, and then relase it htinks i am clicking a area for them to go to, instead of me actually trying to select them all"
+
+**AI Agent:** Codex
+
+**Summary:** Made G-Drill's defensive countermeasures apply to nearby allies only, changed summon spawns to the player's side of the map, and suppressed move orders after drag-select.
+
+---
+
+## Prompt 104
+**User:** "fiji fires two lasers at the time. also a issue i have found is that when i tell a unit to go to a sector (so they can claim it) they will wander out of it."
+
+**AI Agent:** Codex
+
+**Summary:** Made Fiji fire dual lasers and added zone-hold orders so units stay in a sector after being sent there.
+
+---
+
+## Checkpoint 19
+**Files:** `index.checkpoint-019.html`
+**Notes:** Snapshot after dual lasers for Dreadstar and zone-hold orders.
+
+---
+
+## Prompt 105
+**User:** "one more problem is if i have a unit selected, and I want to select another unit, I click on the new unit, but it sends the previous unit to wherever i clicked. the dreadstar moves a little bit to where i clicked, then returns back to the fleet. I do not want my units to move on their own"
+
+**AI Agent:** Codex
+
+**Summary:** Prevented move orders when clicking another unit, and disabled cohesion pull for the Dreadstar so it no longer drifts back to the fleet.
+
+---
+
+## Checkpoint 20
+**Files:** `index.checkpoint-020.html`
+**Notes:** Snapshot after fixing click-to-select move issue and Dreadstar cohesion drift.
+
+---
+
+## Prompt 106
+**User:** "show me how many points i am getting, i am still facing issues with the movement, when i click for a unit to go to a location, then i click on another unit, it will send the moving unit to where i clicked. i don't want FIji to be affected by the EMP"
+
+**AI Agent:** Codex
+
+**Summary:** Added point gain per second to mission display, suppressed move orders when clicking a unit to select, and excluded Fiji's Dreadstar from EMP effects.
+
+---
+
+## Checkpoint 21
+**Files:** `index.checkpoint-021.html`
+**Notes:** Snapshot after point-rate display, click selection suppression, and EMP immunity for Dreadstar.
+
+---
+
+## Prompt 107
+**User:** "if i drag click, and select one unit, i want them to play a voiceline, if i select multiple, i want ONLY one person in the group to say aa voice line"
+
+**AI Agent:** Codex
+
+**Summary:** Updated drag-select so single selections play that unit's voiceline and multi-select plays exactly one unit's voiceline.
+
+---
+
+## Prompt 108
+**User:** "if i select multiple units, i want there to be a prioreity for who appears in the HUD. first priority is heroes, and if there are none, then G-Drill (which is now in the group casters) will appear, then anyone else with a ability, and then combat units"
+
+**AI Agent:** Codex
+
+**Summary:** Added HUD selection priority (heroes, then G-Drill, then any unit with abilities, then others) for multi-select and select-all.
+
+---
+
+## Checkpoint 22
+**Files:** `index.checkpoint-022.html`
+**Notes:** Snapshot after HUD priority selection rules.
+
+---
+
+## Prompt 109
+**User:** "dread stars still have the problem of moving a little, then stopping"
+
+**AI Agent:** Codex
+
+**Summary:** Added forced-move orders that ignore auto-targeting until the destination is reached to prevent units (including Dreadstar) from stopping early.
+
+---
+
+## Prompt 110
+**User:** "i want the AI to attempt to capture zones too, like it captures C then goes to B or whatever it thinks is best"
+
+**AI Agent:** Codex
+
+**Summary:** Added enemy zone-capture behavior that periodically directs enemy units to the highest-value uncaptured zone.
+
+---
+
+## Prompt 111
+**User:** "if i select a big group of units, i want the person with the highest prioteity to say their voiceline"
+
+**AI Agent:** Codex
+
+**Summary:** Made multi-select voice line use the same highest-priority unit that appears in the HUD.
