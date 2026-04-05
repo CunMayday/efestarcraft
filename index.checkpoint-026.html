@@ -1,0 +1,2833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efe's Unitled Starcraft Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the sci-fi aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            user-select: none; /* Prevent text selection while clicking fast */
+            touch-action: manipulation;
+        }
+
+        h1, h2, .sci-fi-text {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Animated scanlines for the portrait */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+        }
+
+        #portrait-static {
+            position: absolute;
+            inset: 0;
+            z-index: 12;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08) 1px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 3px),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06) 1px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px);
+            animation: static-flash 0.25s steps(2) 1;
+            opacity: 0;
+        }
+
+        @keyframes static-flash {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Subtle pulsating selection ring */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); border-color: rgba(74, 222, 128, 0.8); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); border-color: rgba(74, 222, 128, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); border-color: rgba(74, 222, 128, 0); }
+        }
+
+        .unit-selected {
+            z-index: 20;
+        }
+
+        .unit-selected::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            border: 2px solid rgba(74, 222, 128, 0.8);
+            animation: pulse-ring 2s infinite;
+            pointer-events: none;
+        }
+        
+        .unit-player {
+            filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.6));
+        }
+        .unit-enemy {
+            filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+        }
+
+        /* Custom Sprite Idle Animations */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes hover-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes jitter {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(1px, -1px) rotate(2deg); }
+            50% { transform: translate(-1px, 1px) rotate(-1deg); }
+            75% { transform: translate(1px, 1px) rotate(1deg); }
+        }
+        
+        .anim-breathe { animation: breathe 3s ease-in-out infinite; }
+        .anim-hover { animation: hover-float 4s ease-in-out infinite; }
+        .anim-jitter { animation: jitter 0.5s linear infinite; }
+        
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-color: #0f172a;
+        }
+
+        /* Ship window starfield */
+        .starfield {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background:
+                radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent 60%),
+                radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,0.7), transparent 60%),
+                radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.6), transparent 60%),
+                radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,0.9), transparent 60%),
+                radial-gradient(1px 1px at 55% 50%, rgba(255,255,255,0.5), transparent 60%),
+                radial-gradient(1px 1px at 20% 60%, rgba(255,255,255,0.8), transparent 60%),
+                radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.7), transparent 60%);
+            opacity: 0.8;
+            animation: star-drift 12s linear infinite;
+            background-size: 100% 100%;
+        }
+
+        .starfield::before,
+        .starfield::after {
+            content: '';
+            position: absolute;
+            inset: -100% 0 100% 0;
+            background:
+                radial-gradient(1px 1px at 12% 10%, rgba(255,255,255,0.8), transparent 60%),
+                radial-gradient(1px 1px at 40% 40%, rgba(255,255,255,0.6), transparent 60%),
+                radial-gradient(1px 1px at 65% 75%, rgba(255,255,255,0.7), transparent 60%),
+                radial-gradient(1px 1px at 80% 25%, rgba(255,255,255,0.9), transparent 60%),
+                radial-gradient(1px 1px at 5% 85%, rgba(255,255,255,0.6), transparent 60%);
+            opacity: 0.5;
+            animation: star-drift 18s linear infinite;
+        }
+
+        .starfield::after {
+            opacity: 0.3;
+            filter: blur(0.3px);
+            animation-duration: 24s;
+        }
+
+        @keyframes star-drift {
+            from { transform: translateY(0); }
+            to { transform: translateY(100%); }
+        }
+
+        .ship-frame {
+            position: absolute;
+            inset: 16px;
+            border: 2px solid rgba(148, 163, 184, 0.4);
+            border-radius: 24px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 0 30px rgba(59,130,246,0.2);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .ship-panels {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background:
+                linear-gradient(180deg, rgba(15,23,42,0.7), rgba(15,23,42,0.2)),
+                radial-gradient(1200px 400px at 50% -10%, rgba(59,130,246,0.25), transparent 60%);
+        }
+
+        .hit-flash {
+            animation: hit-flash 0.35s ease-out;
+        }
+
+        @keyframes hit-flash {
+            0% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+            20% { box-shadow: 0 0 18px rgba(239,68,68,0.8); }
+            100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+        }
+        
+        .attack-mode-cursor {
+            cursor: crosshair !important;
+        }
+
+        .flip-x {
+            transform: scaleX(-1);
+        }
+
+        .ability-btn {
+            background: linear-gradient(180deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9));
+            border: 1px solid rgba(148,163,184,0.35);
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 11px;
+            color: #e2e8f0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .ability-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .shield-ring {
+            position: absolute;
+            inset: -6px;
+            border-radius: 9999px;
+            border: 2px solid rgba(14,165,233,0.7);
+            box-shadow: 0 0 12px rgba(14,165,233,0.6);
+            pointer-events: none;
+            animation: pulse-ring 1.6s ease-in-out infinite;
+        }
+
+        .shield-radius {
+            position: absolute;
+            border-radius: 9999px;
+            border: 2px solid rgba(59,130,246,0.7);
+            box-shadow: 0 0 16px rgba(59,130,246,0.6);
+            background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0.0) 70%);
+            pointer-events: none;
+            z-index: 9;
+        }
+
+        .teleport-indicator {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            margin-left: -70px;
+            margin-top: -70px;
+            border-radius: 9999px;
+            border: 2px dashed rgba(147,51,234,0.8);
+            box-shadow: 0 0 14px rgba(147,51,234,0.6);
+            background: radial-gradient(circle, rgba(147,51,234,0.15) 0%, rgba(147,51,234,0.0) 70%);
+            pointer-events: none;
+            z-index: 18;
+        }
+
+        .teleport-flash {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            margin-left: -45px;
+            margin-top: -45px;
+            border-radius: 9999px;
+            border: 2px solid rgba(236,72,153,0.8);
+            box-shadow: 0 0 20px rgba(236,72,153,0.7);
+            pointer-events: none;
+            z-index: 18;
+            animation: teleport-flash 0.45s ease-out;
+        }
+
+        @keyframes teleport-flash {
+            0% { transform: scale(0.7); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .smoke-cloud {
+            position: absolute;
+            inset: -10px;
+            border-radius: 9999px;
+            background: radial-gradient(circle, rgba(148,163,184,0.35) 0%, rgba(15,23,42,0.0) 70%);
+            pointer-events: none;
+            animation: smoke-pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes smoke-pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.95); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .barrier {
+            position: absolute;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px dashed rgba(239, 68, 68, 0.35);
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .ramp {
+            position: absolute;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px dashed rgba(34, 197, 94, 0.45);
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .zone {
+            position: absolute;
+            border: 2px dashed rgba(148, 163, 184, 0.6);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.1);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .zone-label {
+            position: absolute;
+            top: -18px;
+            left: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            color: #e2e8f0;
+        }
+
+        .zone-player {
+            border-color: rgba(34, 197, 94, 0.9);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+        }
+
+        .zone-enemy {
+            border-color: rgba(239, 68, 68, 0.9);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+        }
+
+        .select-box {
+            position: absolute;
+            border: 1px dashed rgba(59,130,246,0.8);
+            background: rgba(59,130,246,0.15);
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            #console {
+                height: auto;
+                flex-direction: column;
+                gap: 12px;
+            }
+            #console > div {
+                width: 100% !important;
+            }
+            #world {
+                min-height: 55vh;
+            }
+            #hud-dialog-panel {
+                width: 100%;
+                order: 2;
+            }
+            #inventory-panel {
+                width: 100%;
+                order: 3;
+            }
+            #minimap {
+                height: 160px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #world {
+                min-height: 50vh;
+            }
+            #console {
+                padding: 8px;
+            }
+            #hud-dialog-panel .text-xs,
+            #inventory-panel .text-xs {
+                font-size: 10px;
+            }
+            .sci-fi-text {
+                letter-spacing: 0.08em;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden bg-black text-gray-200 flex flex-col relative">
+
+    <!-- Dialog Overlay -->
+    <div id="dialog-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center pointer-events-auto">
+        <div class="bg-slate-900 border-2 border-amber-500 p-6 rounded-lg max-w-md w-full shadow-[0_0_30px_rgba(217,119,6,0.3)]">
+            <h3 id="dialog-title" class="text-2xl font-bold text-amber-400 sci-fi-text mb-2 uppercase tracking-wider">NPC NAME</h3>
+            <div class="h-px w-full bg-gradient-to-r from-amber-500 to-transparent mb-4"></div>
+            <p id="dialog-text" class="text-slate-300 mb-6 text-lg">Hello there.</p>
+            <div id="dialog-buttons" class="flex justify-end gap-4">
+                <button onclick="closeDialog()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded sci-fi-text font-bold text-slate-300 transition-colors border border-slate-500 shadow-sm">CANCEL</button>
+                <button id="dialog-action-btn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold sci-fi-text transition-colors border border-green-400 shadow-[0_0_10px_rgba(74,222,128,0.3)]">ACTION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center pointer-events-auto">
+        <div class="bg-slate-900 border-2 border-blue-400 p-6 rounded-lg max-w-lg w-full shadow-[0_0_30px_rgba(59,130,246,0.35)]">
+            <h3 class="text-xl font-bold text-blue-300 sci-fi-text mb-2 uppercase tracking-wider">Tutorial</h3>
+            <div class="h-px w-full bg-gradient-to-r from-blue-500 to-transparent mb-4"></div>
+            <p id="tutorial-text" class="text-slate-200 mb-6 text-base leading-snug"></p>
+            <div class="flex justify-between gap-3">
+                <button id="tutorial-prev" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded sci-fi-text font-bold text-slate-200 border border-slate-500">PREV</button>
+                <div class="flex gap-3">
+                    <button id="tutorial-skip" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded sci-fi-text font-bold text-slate-200 border border-slate-500">SKIP</button>
+                    <button id="tutorial-next" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold sci-fi-text transition-colors border border-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.35)]">NEXT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game World / Map Area -->
+    <div id="world" class="relative flex-grow grid-bg shadow-inner cursor-default" onclick="handleWorldClick(event)" style="touch-action: none; background-image: url('assets/terrainpixel.png'); background-size: cover; background-position: center;">
+        <div class="ship-panels"></div>
+        <div class="starfield"></div>
+        <div class="ship-frame"></div>
+
+        <!-- Battle Overlay (Pokemon-Style) -->
+        <div id="battle-overlay" class="absolute inset-0 hidden z-40 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+            <div class="w-[90%] max-w-5xl h-[70%] bg-slate-900 border-2 border-amber-500/60 rounded-2xl shadow-[0_0_30px_rgba(217,119,6,0.3)] relative overflow-hidden">
+                <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(800px_200px_at_50%_-20%,rgba(59,130,246,0.25),transparent_60%)]"></div>
+                <div class="absolute inset-0 pointer-events-none opacity-40" style="background: repeating-linear-gradient(45deg, rgba(15,23,42,0.7), rgba(15,23,42,0.7) 10px, rgba(15,23,42,0.4) 10px, rgba(15,23,42,0.4) 20px);"></div>
+                <div class="relative z-10 h-full flex flex-col">
+                    <div class="flex items-center justify-between px-6 py-3 border-b border-slate-700">
+                        <div class="text-amber-400 sci-fi-text tracking-widest text-sm">BATTLE MODE</div>
+                        <div id="battle-turn" class="text-slate-300 text-xs">Your Turn</div>
+                    </div>
+                    <div class="flex-1 grid grid-cols-2 gap-6 p-6">
+                        <div class="flex flex-col justify-between">
+                            <div id="battle-enemy" class="h-40 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center relative">
+                                <div class="absolute top-2 left-2 text-xs text-red-300 font-bold">ENEMY</div>
+                                <div class="w-32 h-2 bg-slate-900 border border-slate-600 rounded overflow-hidden absolute bottom-2 left-2">
+                                    <div id="battle-enemy-hp-bar" class="h-full bg-red-500" style="width: 100%"></div>
+                                </div>
+                                <div id="battle-enemy-hp" class="absolute bottom-2 right-2 text-[10px] text-slate-300">--/--</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-end gap-4">
+                            <div id="battle-player-1" class="h-24 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center relative cursor-pointer"></div>
+                            <div id="battle-player-2" class="h-24 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center relative cursor-pointer"></div>
+                            <div id="battle-player-3" class="h-24 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center relative cursor-pointer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-slate-300 text-xs">Click a unit, then choose a move.</div>
+        </div>
+        <!-- Top status bar -->
+        <div class="absolute top-0 left-0 w-full h-8 bg-slate-900/80 border-b border-slate-700 flex items-center px-4 justify-between text-xs text-slate-400 z-10 pointer-events-none">
+            <div id="game-status"><span class="text-amber-500">MODE:</span> <span id="mode-text">HUB / EXPLORATION</span></div>
+            <div class="sci-fi-text tracking-widest text-amber-500" id="sector-text">OUTPOST 7 - COMMAND HUB</div>
+        </div>
+        
+        <!-- Mission Top Right Buttons -->
+        <div class="absolute top-12 right-4 z-30 flex flex-col items-end gap-2">
+            <div class="text-xs text-amber-200 bg-black/50 px-3 py-1 rounded backdrop-blur-sm pointer-events-none font-bold border border-amber-500/30">Wing: <span id="squad-counter">0</span>/3</div>
+            <div class="text-[10px] text-slate-400 bg-black/50 p-2 rounded mt-2 text-right pointer-events-none border border-slate-700">
+                <div class="text-amber-400 font-bold mb-1 border-b border-slate-600 pb-1">HUB CONTROLS</div>
+                <div>[ W A S D ] Move Avatar</div>
+                <div>[ E ] Talk / Recruit</div>
+                <div class="text-red-400 font-bold mt-2 mb-1 border-b border-slate-600 pb-1 hidden" id="mission-controls-title">MISSION SYSTEMS</div>
+            </div>
+            <button id="tutorial-open" class="text-[10px] text-blue-200 bg-blue-900/40 px-3 py-1 rounded border border-blue-500/40 hover:bg-blue-900/70 transition-colors">
+                Tutorial
+            </button>
+        </div>
+
+        <!-- Interaction Tooltip -->
+        <div id="interaction-tooltip" class="absolute z-40 bg-black/90 text-white border border-amber-500 px-3 py-1.5 rounded text-xs hidden transform -translate-x-1/2 pointer-events-none font-bold tracking-widest flex items-center gap-2 shadow-[0_0_10px_rgba(217,119,6,0.4)]">
+            <span class="bg-amber-500 text-black px-1.5 py-0.5 rounded">E</span> TALK
+        </div>
+
+        <!-- Units will be dynamically injected here -->
+    </div>
+
+    <!-- Bottom UI Console (SC2 Style) -->
+    <div id="console" class="h-56 bg-slate-900 border-t-4 border-slate-600 flex p-3 gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] relative z-20">
+        
+        <!-- Decoration lines -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500 opacity-50"></div>
+
+        <!-- HUD Audio -->
+        <audio id="hud-dialog-sfx" preload="auto" src="firebatburning.mp3"></audio>
+        <audio id="cultist-sfx" preload="auto"></audio>
+        <audio id="gdrill-sfx" preload="auto"></audio>
+        <audio id="marine-sfx" preload="auto"></audio>
+
+        <!-- 1. Portrait Section -->
+        <div class="h-full aspect-square bg-black border-2 border-slate-700 rounded-lg relative overflow-hidden flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,1)] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTExIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMjIyIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+')]">
+            <div id="portrait-placeholder" class="text-slate-500 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span class="text-sm tracking-widest sci-fi-text">NO SIGNAL</span>
+            </div>
+            <video id="portrait-video" class="hidden w-full h-full object-cover" autoplay muted playsinline preload="auto"></video>
+            <div id="scanlines" class="scanlines hidden"></div>
+            <div id="portrait-static" class="hidden"></div>
+        </div>
+
+        <!-- 2. Unit Stats Section -->
+        <div class="flex-grow bg-slate-800 border-2 border-slate-700 rounded-lg p-4 flex flex-col relative overflow-hidden">
+            <svg class="absolute -right-10 -bottom-10 w-48 h-48 text-slate-700 opacity-20" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+
+            <div class="relative z-10 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-2 border-b border-slate-600 pb-2">
+                    <div>
+                        <h2 id="unit-name" class="text-2xl font-bold text-amber-400 sci-fi-text uppercase tracking-widest drop-shadow-md">NO UNIT SELECTED</h2>
+                        <span id="unit-level" class="text-lg text-slate-400 font-bold bg-slate-900 px-2 rounded hidden">Lv. <span id="level-val">--</span></span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-6 mt-2">
+                    <div class="w-1/2 flex flex-col gap-3">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1 font-bold">
+                                <span class="text-green-400">HP</span>
+                                <span id="unit-hp">--/--</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-600">
+                                <div id="hp-bar" class="bg-gradient-to-r from-green-600 to-green-400 h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1 font-bold">
+                                <span class="text-blue-400">ENERGY</span>
+                                <span id="unit-energy">--/--</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-600">
+                                <div id="energy-bar" class="bg-gradient-to-r from-blue-600 to-blue-400 h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-1/2 flex flex-col border-l border-slate-600 pl-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs text-slate-400 uppercase tracking-wide">Type:</span>
+                            <span id="unit-type" class="px-2 py-0.5 text-xs font-bold rounded bg-slate-700 border border-slate-500 text-slate-300 shadow-sm">---</span>
+                        </div>
+                        <p id="unit-desc" class="text-sm text-slate-400 italic leading-snug">
+                            Click on a unit to view details. Use W,A,S,D to walk and E to recruit.
+                        </p>
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <button id="ability-1" class="ability-btn">---</button>
+                            <button id="ability-2" class="ability-btn">---</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HUD Dialogue (Reserved Area) -->
+        <div id="hud-dialog-panel" class="w-80 bg-slate-950 border-2 border-amber-500/60 rounded-lg p-3 flex flex-col shadow-[0_0_16px_rgba(217,119,6,0.2)]">
+            <div class="flex items-center justify-between mb-2">
+                <div id="hud-dialog-name" class="text-amber-400 sci-fi-text text-xs tracking-widest uppercase">Dialogue</div>
+                <div id="hud-dialog-hint" class="text-[10px] text-slate-400">[T] Start</div>
+            </div>
+            <div class="h-px w-full bg-gradient-to-r from-amber-500 to-transparent mb-2"></div>
+            <p id="hud-dialog-text" class="text-slate-200 text-sm leading-snug flex-grow">No active transmission.</p>
+            <div id="hud-dialog-choices" class="mt-3 flex flex-wrap gap-2 justify-end"></div>
+            <div class="mt-3 flex justify-end gap-2">
+                <button id="hud-dialog-close" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-[10px] font-bold sci-fi-text text-slate-200 border border-slate-500">CLOSE</button>
+                <button id="hud-dialog-next" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-black rounded text-[10px] font-bold sci-fi-text border border-amber-400 shadow-[0_0_8px_rgba(217,119,6,0.4)]">NEXT</button>
+            </div>
+        </div>
+
+        <!-- 4. Inventory Panel -->
+        <div id="inventory-panel" class="w-56 bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-xs text-slate-400 uppercase tracking-widest">Inventory</div>
+                <div class="text-[10px] text-amber-400 font-bold" id="inventory-count">0/3</div>
+            </div>
+            <div class="h-px w-full bg-gradient-to-r from-slate-600 to-transparent mb-2"></div>
+            <div id="inventory-list" class="text-xs text-slate-300 flex flex-col gap-2 overflow-y-auto"></div>
+            <div class="mt-2 text-[10px] text-slate-500">Select 3 to deploy.</div>
+        </div>
+
+        <!-- 5. Unit Summoning -->
+        <div class="w-80 bg-slate-800 border-2 border-slate-700 rounded-lg p-2 flex flex-col">
+            <div class="text-xs text-center text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-600 pb-1">Unit Summoning</div>
+            <div id="moves-grid" class="grid grid-cols-2 grid-rows-2 gap-2 flex-grow">
+                <button class="ability-btn summon-btn bg-gradient-to-b from-red-800 to-red-900 border border-red-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="cultist">
+                    <span class="font-bold text-sm text-white drop-shadow">Firebat</span>
+                    <span class="text-xs text-red-300">Cost 3</span>
+                </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-blue-800 to-blue-900 border border-blue-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="marine">
+                    <span class="font-bold text-sm text-white drop-shadow">Rubric</span>
+                    <span class="text-xs text-blue-300">Cost 6</span>
+                </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-purple-800 to-purple-900 border border-purple-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="sorcerer">
+                    <span class="font-bold text-sm text-white drop-shadow">G-Drill</span>
+                    <span class="text-xs text-purple-300">Cost 10</span>
+                </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-pink-800 to-pink-900 border border-pink-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadmaw">
+                    <span class="font-bold text-sm text-white drop-shadow">Dreadmaw</span>
+                    <span class="text-xs text-pink-300">Cost 12</span>
+                </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadstar">
+                    <span class="font-bold text-sm text-white drop-shadow">Fiji's Dreadstar</span>
+                    <span class="text-xs text-emerald-300">Cost 15</span>
+                </button>
+            </div>
+            <div class="mt-2 text-xs text-slate-300 border-t border-slate-700 pt-2">
+                <div class="text-amber-300 font-bold mb-1">Mission Status</div>
+                <div id="mission-status">Stand by for deployment.</div>
+                <div id="mission-points" class="text-[11px] text-blue-200 mt-1">Points: 0 | Enemy: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const world = document.getElementById('world');
+        const portraitVideo = document.getElementById('portrait-video');
+        const portraitPlaceholder = document.getElementById('portrait-placeholder');
+        const scanlines = document.getElementById('scanlines');
+        const portraitStatic = document.getElementById('portrait-static');
+        
+        // UI Elements
+        const unitNameEl = document.getElementById('unit-name');
+        const unitLevelEl = document.getElementById('unit-level');
+        const levelValEl = document.getElementById('level-val');
+        const unitHpEl = document.getElementById('unit-hp');
+        const hpBar = document.getElementById('hp-bar');
+        const unitEnergyEl = document.getElementById('unit-energy');
+        const energyBar = document.getElementById('energy-bar');
+        const unitTypeEl = document.getElementById('unit-type');
+        const unitDescEl = document.getElementById('unit-desc');
+        const movesGrid = document.getElementById('moves-grid');
+        const abilityBtn1 = document.getElementById('ability-1');
+        const abilityBtn2 = document.getElementById('ability-2');
+        const squadCounter = document.getElementById('squad-counter');
+        const modeText = document.getElementById('mode-text');
+        const sectorText = document.getElementById('sector-text');
+        
+        // Dialog UI
+        const dialogOverlay = document.getElementById('dialog-overlay');
+        const dialogTitle = document.getElementById('dialog-title');
+        const dialogText = document.getElementById('dialog-text');
+        const dialogActionBtn = document.getElementById('dialog-action-btn');
+        const interactionTooltip = document.getElementById('interaction-tooltip');
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        const tutorialText = document.getElementById('tutorial-text');
+        const tutorialPrev = document.getElementById('tutorial-prev');
+        const tutorialNext = document.getElementById('tutorial-next');
+        const tutorialSkip = document.getElementById('tutorial-skip');
+        const tutorialOpen = document.getElementById('tutorial-open');
+        const hudDialogPanel = document.getElementById('hud-dialog-panel');
+        const hudDialogName = document.getElementById('hud-dialog-name');
+        const hudDialogText = document.getElementById('hud-dialog-text');
+        const hudDialogHint = document.getElementById('hud-dialog-hint');
+        const hudDialogNext = document.getElementById('hud-dialog-next');
+        const hudDialogClose = document.getElementById('hud-dialog-close');
+        const hudDialogChoices = document.getElementById('hud-dialog-choices');
+        const missionStatus = document.getElementById('mission-status');
+        const missionPointsEl = document.getElementById('mission-points');
+
+        // State Management
+        let gameState = 'EXPLORATION'; // 'EXPLORATION' or 'MISSION'
+        let playerSquad = []; // Recruited
+        let activeSquad = []; // Selected for battle (max 3)
+        let playerAvatar = null;
+        let selectedUnits = [];
+        let allEntities = [];
+        let isAttackMoveMode = false;
+        let lastFrameTime = performance.now();
+        let entityIdCounter = 1;
+        let currentInteractable = null;
+        let lastClickTime = 0;
+        let lastClickPos = { x: -9999, y: -9999 };
+        let hudDialogSequence = [];
+        let hudDialogStep = 0;
+        let hudDialogActive = false;
+        let hudDialogIsTest = false;
+        let conversationActive = false;
+        let currentConversation = null;
+        let currentConversationNode = null;
+        let currentNpc = null;
+        let tutorialStep = 0;
+        let dreadmawPortraitToggle = false;
+        let cultistSfxIndex = 0;
+        let gdrillSfxIndex = 0;
+        let marineSfxIndex = 0;
+        let isDraggingSelect = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragBox = null;
+        let suppressWorldClick = false;
+        let suppressNextWorldClick = false;
+        let suppressSelectionClick = false;
+        const keys = {};
+        const battleOverlay = document.getElementById('battle-overlay');
+        const battleTurnText = document.getElementById('battle-turn');
+        const battleEnemySlot = document.getElementById('battle-enemy');
+        const battleEnemyHp = document.getElementById('battle-enemy-hp');
+        const battleEnemyHpBar = document.getElementById('battle-enemy-hp-bar');
+        const battlePlayerSlots = [
+            document.getElementById('battle-player-1'),
+            document.getElementById('battle-player-2'),
+            document.getElementById('battle-player-3')
+        ];
+        const inventoryList = document.getElementById('inventory-list');
+        const inventoryCount = document.getElementById('inventory-count');
+
+        let battleActive = false;
+        let battleEnemy = null;
+        let battlePlayerUnits = [];
+        let battleSelectedIndex = 0;
+        let battleTurn = 'PLAYER';
+        let battleLog = [];
+        let battleHpSnapshot = [];
+        let portraitStaticInterval = null;
+        let portraitStaticTimeout = null;
+        let wallElements = [];
+        let missionActive = false;
+        let barrierElements = [];
+        let rampElements = [];
+        let zones = [];
+        let zoneElements = [];
+        let playerPoints = 0;
+        let enemyPoints = 0;
+        let enemySummonTimer = 0;
+        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15, dreadmaw: 12 };
+        let holdStartTime = null;
+        let enemyZoneTimer = 0;
+        let pressureTimer = 0;
+        let teleportMode = false;
+        let teleportIndicator = null;
+        let teleportUnit = null;
+
+        const COMBAT_TUNING = {
+            speedMultiplier: 1.0,
+            attackCooldownMultiplier: 0.9,
+            separationDistance: 28,
+            separationStrength: 0.7,
+            tracerDuration: 120,
+            sightRange: 350,
+            cohesionRange: 220
+        };
+
+        const WALLS = [
+            { x: 260, y: 180, w: 220, h: 24 },
+            { x: 520, y: 140, w: 28, h: 220 },
+            { x: 680, y: 320, w: 200, h: 26 },
+            { x: 340, y: 420, w: 240, h: 24 }
+        ];
+
+        // Terrain barriers (approximate raised/mine areas) and ramps (passable)
+        const TERRAIN_BARRIERS = [
+            { x: 60, y: 40, w: 420, h: 220 },
+            { x: 520, y: 60, w: 380, h: 220 },
+            { x: 80, y: 420, w: 300, h: 200 },
+            { x: 520, y: 380, w: 360, h: 220 }
+        ];
+
+        const TERRAIN_RAMPS = [
+            { x: 420, y: 220, w: 90, h: 60 },
+            { x: 450, y: 360, w: 90, h: 60 }
+        ];
+
+        const ZONE_DATA = [
+            { id: 'A', x: 80, y: 120, w: 200, h: 150, value: 1 },
+            { id: 'B', x: 480, y: 260, w: 260, h: 190, value: 3 },
+            { id: 'C', x: 840, y: 120, w: 200, h: 150, value: 1 }
+        ];
+
+        // Base Unit Templates
+        const unitTemplates = {
+            'player_avatar': {
+                name: 'Flight Lead', level: 99, type: 'CAPITAL / COMMAND', typeColor: 'bg-green-900 border-green-400',
+                hp: 320, maxHp: 320, energy: 120, maxEnergy: 120,
+                desc: 'Flagship pilot coordinating the wing with tactical uplinks.',
+                video: 'chaosmarineportrait.mp4', speed: 160, attackRange: 140, attackDamage: 22, attackCooldown: 0.9,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_5px_5px_rgba(74,222,128,0.8)]"><svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16" fill="#166534" stroke="#4ade80" stroke-width="2"/><path d="M24 10 L32 30 L16 30 Z" fill="#4ade80"/></svg></div>',
+                moves: [ { name: 'Command Uplink', pp: 99, maxPp: 99 }, { name: 'Broadside', pp: 99, maxPp: 99 }, null, null ]
+            },
+            'commander_npc': {
+                name: 'Dockmaster', level: '??', type: 'NPC', typeColor: 'bg-yellow-900 border-yellow-400',
+                hp: 9999, maxHp: 9999, energy: 0, maxEnergy: 0,
+                desc: 'Orbital operations chief coordinating launches and resupply.',
+                video: 'character-animation(1).mp4', speed: 0, attackRange: 0, attackDamage: 0, attackCooldown: 99,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center drop-shadow-[0_6px_6px_rgba(234,179,8,0.7)]"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="10" width="36" height="40" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/><rect x="18" y="16" width="24" height="18" rx="3" fill="#111827" stroke="#f59e0b" stroke-width="2"/><circle cx="24" cy="25" r="3" fill="#fcd34d"/><circle cx="36" cy="25" r="3" fill="#fcd34d"/><rect x="23" y="36" width="14" height="4" rx="2" fill="#78350f"/></svg></div>',
+                moves: []
+            },
+            'marine': {
+                name: 'Rubric Marine', level: 42, type: 'ESCORT / GUNSHIP', typeColor: 'bg-purple-900 border-purple-400',
+                hp: 180, maxHp: 180, energy: 90, maxEnergy: 110,
+                desc: 'Escort gunship with stabilized cannons and defensive countermeasures.',
+                video: 'character-animation(4).mp4', speed: 95, attackRange: 170, attackDamage: 16, attackCooldown: 1.1,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_6px_6px_rgba(59,130,246,0.6)]"><img src="assets/marine.png" alt="Rubric Marine" class="marine-sprite w-14 h-14 object-contain" /></div>',
+                abilities: [
+                    { name: 'Smoke Bomb', type: 'smoke', duration: 4, cooldown: 10 }
+                ],
+                moves: [ { name: 'Rail Burst', pp: 20, maxPp: 20 }, { name: 'Ion Spray', pp: 10, maxPp: 10 }, { name: 'Chaff Cloud', pp: 5, maxPp: 5 }, { name: 'Kinetic Lance', pp: 15, maxPp: 15 } ]
+            },
+            'sorcerer': {
+                name: 'G-Drill', level: 55, type: 'BATTLESHIP / HEAVY', typeColor: 'bg-indigo-900 border-indigo-400',
+                hp: 220, maxHp: 240, energy: 160, maxEnergy: 160,
+                desc: 'Heavy battleship with layered plating and a forward plasma core.',
+                video: 'character-animation.mp4', speed: 85, attackRange: 220, attackDamage: 28, attackCooldown: 1.7,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_8px_rgba(76,29,149,0.6)]"><img src="assets/gdrill.png" alt="G-Drill" class="gdrill-sprite w-[168px] h-[168px] object-contain" /></div>',
+                abilities: [
+                    { name: 'Defensive Countermeasures', type: 'shield', duration: 6, cooldown: 8 }
+                ],
+                moves: [ { name: 'Plasma Lance', pp: 10, maxPp: 10 }, { name: 'Ion Sweep', pp: 15, maxPp: 15 }, { name: 'Target Uplink', pp: 5, maxPp: 5 }, { name: 'Singularity Burst', pp: 5, maxPp: 5 } ]
+            },
+            'cultist': {
+                name: 'Firebat', level: 12, type: 'STRIKE / INTERCEPTOR', typeColor: 'bg-red-900 border-red-400',
+                hp: 60, maxHp: 70, energy: 20, maxEnergy: 30,
+                desc: 'Fast strike craft that burns through hulls at close range.',
+                video: 'character-animation(2).mp4', speed: 140, attackRange: 110, attackDamage: 7, attackCooldown: 0.75,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-jitter drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]"><img src="assets/firebat.png" alt="Firebat" class="w-[168px] h-[168px] object-contain" /></div>',
+                moves: [ { name: 'Afterburner Burst', pp: 30, maxPp: 30 }, { name: 'Hull Scorch', pp: 25, maxPp: 25 }, { name: 'Evasive Roll', pp: 5, maxPp: 5 }, { name: 'Break Away', pp: 10, maxPp: 10 } ]
+            },
+            'dreadstar': {
+                name: "Fiji's Dreadstar", level: 70, type: 'HERO / DREAD', typeColor: 'bg-emerald-900 border-emerald-400',
+                hp: 320, maxHp: 360, energy: 220, maxEnergy: 220,
+                desc: 'Hero dreadship with experimental drives. Abilities classified.',
+                video: 'character-animation(7).mp4', speed: 70, attackRange: 240, attackDamage: 32, attackCooldown: 2.0,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_10px_rgba(16,185,129,0.6)]"><img src="assets/dreadstar.webp" alt="Fiji\'s Dreadstar" class="dreadstar-sprite w-[180px] h-[180px] object-contain" /></div>',
+                abilities: [
+                    { name: 'EMP', type: 'emp', duration: 5, cooldown: 15 }
+                ],
+                moves: [ { name: 'Dread Barrage', pp: 6, maxPp: 6 }, { name: 'Core Pulse', pp: 4, maxPp: 4 }, { name: 'Warp Anchor', pp: 3, maxPp: 3 }, { name: 'Event Horizon', pp: 2, maxPp: 2 } ]
+            },
+            'dreadmaw': {
+                name: 'Dreadmaw', level: 62, type: 'HERO / CASTER', typeColor: 'bg-pink-900 border-pink-400',
+                hp: 220, maxHp: 240, energy: 180, maxEnergy: 180,
+                desc: 'Teleport-capable strike ship. Bends space to reposition instantly.',
+                video: 'character-animation(9).mp4', speed: 90, attackRange: 180, attackDamage: 20, attackCooldown: 1.4,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-hover drop-shadow-[0_10px_8px_rgba(236,72,153,0.6)]"><img src="assets/dreadmaw.webp" alt="Dreadmaw" class="dreadmaw-sprite w-[160px] h-[160px] object-contain" /></div>',
+                abilities: [
+                    { name: 'Teleport', type: 'teleport', duration: 0, cooldown: 5 }
+                ],
+                moves: [ { name: 'Void Lances', pp: 10, maxPp: 10 }, { name: 'Phase Cut', pp: 6, maxPp: 6 }, { name: 'Slipstream', pp: 4, maxPp: 4 }, { name: 'Rift Bloom', pp: 3, maxPp: 3 } ]
+            }
+        };
+
+        function spawnUnit(templateKey, x, y, isPlayerOwned = false) {
+            const template = unitTemplates[templateKey];
+            const unit = { ...JSON.parse(JSON.stringify(template)), spriteSvg: template.spriteSvg, templateKey }; 
+            
+            unit.id = 'entity-' + entityIdCounter++;
+            unit.x = x;
+            unit.y = y;
+            unit.targetX = x;
+            unit.targetY = y;
+            unit.isPlayerOwned = isPlayerOwned;
+            unit.faction = isPlayerOwned ? 'player' : (gameState === 'EXPLORATION' ? 'neutral' : 'enemy');
+            unit.state = 'IDLE'; 
+            unit.combatTarget = null;
+            unit.lastAttackTime = 0;
+            unit.speed = unit.speed * COMBAT_TUNING.speedMultiplier;
+            unit.attackCooldown = unit.attackCooldown * COMBAT_TUNING.attackCooldownMultiplier;
+            unit.isHostile = !isPlayerOwned && unit.templateKey !== 'commander_npc';
+            unit.canAttack = true;
+            unit.shieldActive = false;
+            unit.smokeActive = false;
+            unit.abilityCooldowns = {};
+            unit.abilityEnds = {};
+
+            const el = document.createElement('div');
+            el.id = unit.id;
+            el.className = 'absolute w-16 h-16 rounded-full transition-transform flex items-center justify-center -translate-x-1/2 -translate-y-1/2 z-20 hover:scale-110';
+            if (isPlayerOwned) el.classList.add('unit-player');
+            if (unit.faction === 'enemy') el.classList.add('unit-enemy');
+            el.style.left = unit.x + 'px';
+            el.style.top = unit.y + 'px';
+            el.innerHTML = unit.spriteSvg;
+
+            const hpBarContainer = document.createElement('div');
+            hpBarContainer.className = 'absolute -top-2 w-12 h-1.5 bg-black border border-gray-700 rounded overflow-hidden pointer-events-none z-30';
+            const hpBarFill = document.createElement('div');
+            hpBarFill.id = 'hp-fill-' + unit.id;
+            const hpPercent = (unit.hp / unit.maxHp) * 100;
+            hpBarFill.className = 'h-full ' + (hpPercent > 50 ? 'bg-green-500' : (hpPercent > 20 ? 'bg-yellow-500' : 'bg-red-500'));
+            hpBarFill.style.width = hpPercent + '%';
+            hpBarContainer.appendChild(hpBarFill);
+            el.appendChild(hpBarContainer);
+
+            el.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                suppressSelectionClick = true;
+            });
+
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                suppressNextWorldClick = true;
+                stopAllVoices();
+                playUnitVoice(unit);
+                if (gameState === 'MISSION' && unit.faction === 'enemy') {
+                    unitNameEl.innerText = 'HOSTILE UNIT';
+                } else {
+                    selectUnit(unit, el);
+                }
+            });
+
+            unit.element = el;
+            world.appendChild(el);
+            allEntities.push(unit);
+            return unit;
+        }
+
+        function initGame() {
+            // Spawn Hub Units
+            spawnUnit('marine', 300, 200, false);
+            spawnUnit('sorcerer', 500, 300, false);
+            spawnUnit('cultist', 200, 400, false);
+            spawnUnit('cultist', 700, 250, false);
+            spawnUnit('commander_npc', 800, 100, false);
+
+            playerAvatar = spawnUnit('player_avatar', 100, 300, true);
+            selectUnit(playerAvatar, playerAvatar.element);
+            renderHudDialogIdle();
+            renderInventory();
+            setTimeout(() => showTutorial(0), 300);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        battlePlayerSlots.forEach((slot, idx) => {
+            slot.addEventListener('click', () => selectBattleUnit(idx));
+        });
+
+        document.querySelectorAll('.summon-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (gameState !== 'MISSION') return;
+                const type = btn.getAttribute('data-summon');
+                summonUnit(type);
+            });
+        });
+
+        battleEnemySlot.addEventListener('click', () => {
+            if (!battleActive || !battleEnemy) return;
+            stopAllVoices();
+            updateConsoleUI(battleEnemy, true);
+            playUnitVoice(battleEnemy);
+        });
+
+        // --- Controls & Input ---
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            keys[key] = true;
+
+            if (key === 'e' && currentInteractable && gameState === 'EXPLORATION') {
+                startConversation(currentInteractable);
+            }
+            if (key === 't') {
+                if (gameState === 'MISSION') {
+                    const caster = pickHudUnit(selectedUnits || []);
+                    if (caster && caster.templateKey === 'dreadmaw') {
+                        startTeleportMode(caster);
+                        return;
+                    }
+                }
+                if (!hudDialogActive && !conversationActive) {
+                    startHudDialog(testHudDialogue);
+                } else {
+                    nextHudDialog();
+                }
+            }
+            if (key === 'escape') {
+                if (teleportMode) {
+                    cancelTeleportMode();
+                }
+                if (hudDialogActive || conversationActive) {
+                    closeHudDialog();
+                    closeConversation();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            keys[key] = false;
+            
+            // no-op
+        });
+
+        function handleWorldClick(e) {
+            if (suppressWorldClick) {
+                suppressWorldClick = false;
+                return;
+            }
+            if (suppressNextWorldClick) {
+                suppressNextWorldClick = false;
+                return;
+            }
+            if (suppressSelectionClick) {
+                suppressSelectionClick = false;
+                return;
+            }
+            if (teleportMode) {
+                handleTeleportClick(e);
+                return;
+            }
+            if (isDraggingSelect) return;
+            if (gameState === 'MISSION' && selectedUnits.length > 0) {
+                const rect = world.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const now = performance.now() / 1000;
+                const clickMs = performance.now();
+                const dist = Math.hypot(x - lastClickPos.x, y - lastClickPos.y);
+                const isDouble = (clickMs - lastClickTime) < 300 && dist < 20;
+                lastClickTime = clickMs;
+                lastClickPos = { x, y };
+
+                const zone = getZoneAt(x, y);
+                selectedUnits.forEach((unit, index) => {
+                    const offsetX = (index % 3) * 40 - 40;
+                    const offsetY = Math.floor(index / 3) * 40;
+                    
+                    if (zone) {
+                        unit.holdZoneId = zone.id;
+                        unit.targetX = zone.x + zone.w / 2 + offsetX;
+                        unit.targetY = zone.y + zone.h / 2 + offsetY;
+                    } else {
+                        unit.holdZoneId = null;
+                        unit.targetX = x + offsetX;
+                        unit.targetY = y + offsetY;
+                    }
+                    unit.state = isDouble ? 'ATTACK_MOVING' : 'MOVING';
+                    unit.combatTarget = null;
+                    unit.forcedMove = !isDouble;
+                    unit.manualOrderUntil = now + (isDouble ? 0.8 : 1.6);
+                });
+                
+                showClickIndicator(x, y, isDouble ? 'red' : 'green');
+            } else if (gameState === 'MISSION' && selectedUnits.length === 0 && playerSquad.length > 0) {
+                selectAllPlayerUnits();
+                handleWorldClick(e);
+            } else if (gameState === 'EXPLORATION') {
+                deselectAll();
+                selectUnit(playerAvatar, playerAvatar.element);
+            } else {
+                deselectAll();
+            }
+        }
+
+        world.addEventListener('mousedown', (e) => {
+            if (gameState !== 'MISSION') return;
+            if (e.button !== 0) return;
+            const rect = world.getBoundingClientRect();
+            dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            isDraggingSelect = true;
+            if (!dragBox) {
+                dragBox = document.createElement('div');
+                dragBox.className = 'select-box';
+                world.appendChild(dragBox);
+            }
+            dragBox.style.left = dragStart.x + 'px';
+            dragBox.style.top = dragStart.y + 'px';
+            dragBox.style.width = '0px';
+            dragBox.style.height = '0px';
+        });
+
+        world.addEventListener('mousemove', (e) => {
+            if (!isDraggingSelect || !dragBox) return;
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const left = Math.min(dragStart.x, x);
+            const top = Math.min(dragStart.y, y);
+            const width = Math.abs(dragStart.x - x);
+            const height = Math.abs(dragStart.y - y);
+            dragBox.style.left = left + 'px';
+            dragBox.style.top = top + 'px';
+            dragBox.style.width = width + 'px';
+            dragBox.style.height = height + 'px';
+        });
+
+        world.addEventListener('mousemove', (e) => {
+            if (!teleportMode || !teleportIndicator) return;
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            teleportIndicator.style.left = x + 'px';
+            teleportIndicator.style.top = y + 'px';
+        });
+
+        world.addEventListener('mouseup', (e) => {
+            if (!isDraggingSelect) return;
+            const rect = world.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            const left = Math.min(dragStart.x, endX);
+            const top = Math.min(dragStart.y, endY);
+            const width = Math.abs(dragStart.x - endX);
+            const height = Math.abs(dragStart.y - endY);
+            if (dragBox) dragBox.remove();
+            dragBox = null;
+            isDraggingSelect = false;
+
+            if (width < 6 && height < 6) {
+                handleWorldClick(e);
+                return;
+            }
+
+            selectUnitsInRect(left, top, left + width, top + height);
+            suppressWorldClick = true;
+        });
+
+        function selectUnitsInRect(x1, y1, x2, y2) {
+            deselectAll();
+            const picked = allEntities.filter(u => u.faction === 'player' && u.hp > 0)
+                .filter(u => u.x >= x1 && u.x <= x2 && u.y >= y1 && u.y <= y2);
+            if (picked.length === 0) return;
+            selectedUnits = picked;
+            selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
+            const hudUnit = pickHudUnit(selectedUnits);
+            updateConsoleUI(hudUnit);
+            stopAllVoices();
+            if (selectedUnits.length === 1) {
+                playUnitVoice(selectedUnits[0]);
+            } else {
+                const talker = hudUnit || selectedUnits[0];
+                playUnitVoice(talker);
+            }
+        }
+
+        function pickHudUnit(units) {
+            if (!units || units.length === 0) return null;
+            const alive = units.filter(u => u && u.hp > 0);
+            if (alive.length === 0) return units[0];
+            const heroes = alive.filter(u => (u.type || '').toUpperCase().includes('HERO') || u.templateKey === 'dreadstar');
+            if (heroes.length > 0) return heroes[0];
+            const gdrill = alive.find(u => u.templateKey === 'sorcerer');
+            if (gdrill) return gdrill;
+            const withAbility = alive.find(u => u.abilities && u.abilities.length > 0);
+            if (withAbility) return withAbility;
+            return alive[0];
+        }
+
+        function getZoneAt(x, y) {
+            return zones.find(z => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h);
+        }
+
+        function getZoneById(id) {
+            return zones.find(z => z.id === id);
+        }
+
+        function startTeleportMode(unit) {
+            const ability = unit.abilities && unit.abilities.find(a => a.type === 'teleport');
+            if (!ability) return;
+            const now = performance.now() / 1000;
+            const cdEnd = unit.abilityCooldowns[ability.type] || 0;
+            if (now < cdEnd) return;
+            teleportMode = true;
+            teleportUnit = unit;
+            if (!teleportIndicator) {
+                teleportIndicator = document.createElement('div');
+                teleportIndicator.className = 'teleport-indicator';
+                world.appendChild(teleportIndicator);
+            }
+            teleportIndicator.style.left = unit.x + 'px';
+            teleportIndicator.style.top = unit.y + 'px';
+        }
+
+        function cancelTeleportMode() {
+            teleportMode = false;
+            teleportUnit = null;
+            if (teleportIndicator) {
+                teleportIndicator.remove();
+                teleportIndicator = null;
+            }
+        }
+
+        function handleTeleportClick(e) {
+            if (!teleportUnit) {
+                cancelTeleportMode();
+                return;
+            }
+            const rect = world.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const ability = teleportUnit.abilities && teleportUnit.abilities.find(a => a.type === 'teleport');
+            if (!ability) {
+                cancelTeleportMode();
+                return;
+            }
+            const now = performance.now() / 1000;
+            const cdEnd = teleportUnit.abilityCooldowns[ability.type] || 0;
+            if (now < cdEnd) {
+                cancelTeleportMode();
+                return;
+            }
+            teleportUnit.abilityCooldowns[ability.type] = now + ability.cooldown;
+            teleportUnit.abilityEnds[ability.type] = now;
+
+            const flash1 = document.createElement('div');
+            flash1.className = 'teleport-flash';
+            flash1.style.left = teleportUnit.x + 'px';
+            flash1.style.top = teleportUnit.y + 'px';
+            world.appendChild(flash1);
+            setTimeout(() => flash1.remove(), 500);
+
+            teleportUnit.x = x;
+            teleportUnit.y = y;
+            teleportUnit.targetX = x;
+            teleportUnit.targetY = y;
+            teleportUnit.state = 'IDLE';
+            teleportUnit.element.style.left = teleportUnit.x + 'px';
+            teleportUnit.element.style.top = teleportUnit.y + 'px';
+
+            const flash2 = document.createElement('div');
+            flash2.className = 'teleport-flash';
+            flash2.style.left = x + 'px';
+            flash2.style.top = y + 'px';
+            world.appendChild(flash2);
+            setTimeout(() => flash2.remove(), 500);
+
+            updateAbilityButtons(teleportUnit);
+            cancelTeleportMode();
+        }
+
+        function showClickIndicator(x, y, color) {
+            const ind = document.createElement('div');
+            ind.className = 'absolute w-4 h-4 rounded-full border-2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 animate-ping';
+            ind.style.borderColor = color === 'red' ? '#ef4444' : '#22c55e';
+            ind.style.left = x + 'px';
+            ind.style.top = y + 'px';
+            world.appendChild(ind);
+            setTimeout(() => ind.remove(), 500);
+        }
+
+        // --- HUD Dialog System (Bottom Console) ---
+        const testHudDialogue = [
+            { speaker: 'FleetCom', text: 'Outpost 7 to flight lead. Ship-to-ship comms are live.' },
+            { speaker: 'Flight Lead', text: 'Copy. Powering sensors and aligning the nav grid.' },
+            { speaker: 'FleetCom', text: 'Press E near allied ships to add them to your wing. Press T to advance this test transmission.' }
+        ];
+
+        function startHudDialog(sequence) {
+            if (!sequence || sequence.length === 0) return;
+            hudDialogSequence = sequence;
+            hudDialogStep = 0;
+            hudDialogActive = true;
+            hudDialogIsTest = sequence === testHudDialogue;
+            closeConversation();
+            renderHudDialog();
+        }
+
+        function renderHudDialog() {
+            const entry = hudDialogSequence[hudDialogStep];
+            if (!entry) {
+                closeHudDialog();
+                return;
+            }
+            hudDialogName.innerText = entry.speaker || 'SYSTEM';
+            hudDialogText.innerText = entry.text || '';
+            hudDialogHint.innerText = '[T] Next';
+            hudDialogNext.innerText = hudDialogStep >= hudDialogSequence.length - 1 ? 'END' : 'NEXT';
+            hudDialogNext.disabled = false;
+            hudDialogClose.disabled = false;
+            hudDialogChoices.innerHTML = '';
+
+            if (hudDialogIsTest) {
+                playHudDialogSfx();
+            }
+        }
+
+        function nextHudDialog() {
+            if (!hudDialogActive) return;
+            hudDialogStep += 1;
+            if (hudDialogStep >= hudDialogSequence.length) {
+                closeHudDialog();
+                return;
+            }
+            renderHudDialog();
+        }
+
+        function closeHudDialog() {
+            hudDialogActive = false;
+            hudDialogIsTest = false;
+            renderHudDialogIdle();
+        }
+
+        hudDialogNext.addEventListener('click', () => nextHudDialog());
+        hudDialogClose.addEventListener('click', () => {
+            if (conversationActive) closeConversation();
+            else closeHudDialog();
+        });
+
+        function renderHudDialogIdle() {
+            hudDialogName.innerText = 'Dialogue';
+            hudDialogText.innerText = 'No active transmission.';
+            hudDialogHint.innerText = '[T] Start';
+            hudDialogNext.innerText = 'NEXT';
+            hudDialogNext.disabled = true;
+            hudDialogClose.disabled = true;
+            hudDialogChoices.innerHTML = '';
+        }
+
+        function renderInventory() {
+            inventoryCount.innerText = activeSquad.length + '/3';
+            squadCounter.innerText = playerSquad.length;
+            inventoryList.innerHTML = '';
+            if (playerSquad.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'text-[11px] text-slate-500 italic';
+                empty.innerText = 'No recruits yet.';
+                inventoryList.appendChild(empty);
+                return;
+            }
+            playerSquad.forEach(unit => {
+                const row = document.createElement('button');
+                const isSelected = activeSquad.includes(unit);
+                row.className = 'flex items-center justify-between rounded px-2 py-1 border text-left transition-colors';
+                row.className += isSelected
+                    ? ' bg-amber-600/20 border-amber-500/60 text-amber-200'
+                    : ' bg-slate-800/60 border-slate-700 text-slate-200 hover:bg-slate-700/60';
+                const left = document.createElement('div');
+                left.className = 'text-[11px] text-slate-200';
+                left.innerText = unit.name;
+                const right = document.createElement('div');
+                right.className = 'text-[10px] text-slate-400';
+                right.innerText = 'Lv ' + unit.level;
+                row.appendChild(left);
+                row.appendChild(right);
+                row.addEventListener('click', () => toggleActiveSquad(unit));
+                inventoryList.appendChild(row);
+            });
+        }
+
+        function toggleActiveSquad(unit) {
+            const idx = activeSquad.indexOf(unit);
+            if (idx > -1) {
+                activeSquad.splice(idx, 1);
+            } else {
+                if (activeSquad.length >= 3) return;
+                activeSquad.push(unit);
+            }
+            renderInventory();
+        }
+
+        function playHudDialogSfx() {
+            const sfx = document.getElementById('hud-dialog-sfx');
+            if (!sfx) return;
+            sfx.currentTime = 0;
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function showHudNotice(text) {
+            hudDialogName.innerText = 'System';
+            hudDialogText.innerText = text;
+            hudDialogHint.innerText = '';
+            hudDialogChoices.innerHTML = '';
+            hudDialogNext.disabled = true;
+            hudDialogClose.disabled = false;
+        }
+
+        function setBattleLogHeader() {
+            hudDialogName.innerText = 'Battle Log';
+            hudDialogHint.innerText = '';
+            hudDialogChoices.innerHTML = '';
+            hudDialogNext.disabled = true;
+            hudDialogClose.disabled = false;
+        }
+
+        function addBattleLog(text) {
+            battleLog.push(text);
+            if (battleLog.length > 6) battleLog.shift();
+            hudDialogText.innerHTML = battleLog.map(line => line.replace(/</g, '&lt;')).join('<br>');
+        }
+
+        function playCultistClickSfx() {
+            stopAllVoices();
+            const sfx = document.getElementById('cultist-sfx');
+            if (!sfx) return;
+            const files = ['firebatburning.mp3', 'firebatneedlight.mp3'];
+            sfx.src = files[cultistSfxIndex];
+            cultistSfxIndex = (cultistSfxIndex + 1) % files.length;
+            sfx.currentTime = 0;
+            sfx.load();
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function playGdrillClickSfx() {
+            stopAllVoices();
+            const sfx = document.getElementById('gdrill-sfx');
+            if (!sfx) return;
+            const files = ['botlike.mp3', 'botlabmonkeyfree.mp3', 'botnotepadd.mp3', 'fools.mp3'];
+            sfx.src = files[gdrillSfxIndex];
+            gdrillSfxIndex = (gdrillSfxIndex + 1) % files.length;
+            sfx.currentTime = 0;
+            sfx.load();
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function playMarineClickSfx() {
+            stopAllVoices();
+            const sfx = document.getElementById('marine-sfx');
+            if (!sfx) return;
+            const files = ['gottenlost.mp3', 'shock.mp3', 'rading.mp3'];
+            sfx.src = files[marineSfxIndex];
+            marineSfxIndex = (marineSfxIndex + 1) % files.length;
+            sfx.currentTime = 0;
+            sfx.load();
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function playUnitVoice(unit) {
+            if (!unit) return;
+            if (unit.templateKey === 'cultist') {
+                playCultistClickSfx();
+            }
+            if (unit.templateKey === 'sorcerer') {
+                playGdrillClickSfx();
+            }
+            if (unit.templateKey === 'marine') {
+                playMarineClickSfx();
+            }
+        }
+
+        function stopAllVoices() {
+            ['cultist-sfx', 'gdrill-sfx', 'marine-sfx', 'hud-dialog-sfx'].forEach(id => {
+                const audio = document.getElementById(id);
+                if (!audio) return;
+                audio.pause();
+                audio.currentTime = 0;
+            });
+        }
+
+        // --- Advanced Conversation System ---
+        function startConversation(npc) {
+            if (!npc) return;
+            closeHudDialog();
+            currentNpc = npc;
+            currentConversation = buildConversationForNpc(npc);
+            if (!currentConversation) return;
+            conversationActive = true;
+            currentConversationNode = currentConversation.start;
+            updateConsoleUI(npc, false);
+            playUnitVoice(npc);
+            renderConversationNode();
+        }
+
+        function buildConversationForNpc(npc) {
+            if (npc.templateKey === 'commander_npc') {
+                const hasSquad = playerSquad.length >= 3;
+                return {
+                    start: 'intro',
+                    nodes: {
+                        intro: {
+                            speaker: npc.name,
+                            text: hasSquad ? 'Three ships are fueled. Launch to Sector 4?' : 'We need 3 ships in the wing before launch.',
+                            choices: [
+                                { text: 'Launch Mission', action: 'startMission', disabled: !hasSquad },
+                                { text: 'Stand Down', action: 'close' }
+                            ]
+                        }
+                    }
+                };
+            }
+
+            const canRecruit = playerSquad.length < 3;
+            return {
+                start: 'intro',
+                nodes: {
+                    intro: {
+                        speaker: npc.name,
+                text: canRecruit ? 'Need another ship in the wing?' : 'Wing is at capacity.',
+                        choices: [
+                            { text: 'Add to Wing', action: 'recruit', disabled: !canRecruit },
+                            { text: 'Ship Specs', next: 'info' },
+                            { text: 'Stand Down', action: 'close' }
+                        ]
+                    },
+                    info: {
+                        speaker: npc.name,
+                        text: npc.desc || 'No intel available.',
+                        choices: [
+                            { text: 'Back', next: 'intro' },
+                            { text: 'Close', action: 'close' }
+                        ]
+                    }
+                }
+            };
+        }
+
+        function renderConversationNode() {
+            if (!conversationActive || !currentConversation) return;
+            const node = currentConversation.nodes[currentConversationNode];
+            if (!node) {
+                closeConversation();
+                return;
+            }
+            hudDialogName.innerText = node.speaker || 'SYSTEM';
+            hudDialogText.innerText = node.text || '';
+            hudDialogHint.innerText = 'Reply:';
+            hudDialogNext.disabled = true;
+            hudDialogClose.disabled = false;
+            hudDialogChoices.innerHTML = '';
+
+            node.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1.5 text-[10px] font-bold sci-fi-text rounded border shadow-sm';
+                if (choice.disabled) {
+                    btn.className += ' bg-gray-600 text-gray-300 border-gray-500 cursor-not-allowed';
+                    btn.disabled = true;
+                } else {
+                    btn.className += ' bg-amber-600 hover:bg-amber-500 text-black border-amber-400';
+                    btn.addEventListener('click', () => handleConversationChoice(choice));
+                }
+                btn.innerText = choice.text;
+                hudDialogChoices.appendChild(btn);
+            });
+        }
+
+        function handleConversationChoice(choice) {
+            if (!choice) return;
+            if (choice.next) {
+                currentConversationNode = choice.next;
+                renderConversationNode();
+                return;
+            }
+            if (choice.action === 'recruit' && currentNpc) {
+                recruitUnit(currentNpc);
+                closeConversation();
+                return;
+            }
+            if (choice.action === 'startMission') {
+                closeConversation();
+                startMission();
+                return;
+            }
+            if (choice.action === 'close') {
+                closeConversation();
+            }
+        }
+
+        function closeConversation() {
+            conversationActive = false;
+            currentConversation = null;
+            currentConversationNode = null;
+            currentNpc = null;
+            renderHudDialogIdle();
+        }
+
+        // --- Tutorial ---
+        const tutorialSteps = [
+            'Welcome to Sector Control. Capture zones A, B, and C to earn points each second (B is worth 3).',
+            'Select ships with drag-select or click. Click a zone to send your fleet there and hold it.',
+            'Spend points to summon new ships from the Unit Summoning panel. Fiji’s Dreadstar costs 15.',
+            'Win by holding all three zones for 30 seconds. Enemy AI will try to contest and capture too.'
+        ];
+
+        function showTutorial(step = 0) {
+            tutorialStep = Math.max(0, Math.min(tutorialSteps.length - 1, step));
+            tutorialOverlay.classList.remove('hidden');
+            renderTutorial();
+        }
+
+        function renderTutorial() {
+            tutorialText.innerText = tutorialSteps[tutorialStep] || '';
+            tutorialPrev.disabled = tutorialStep === 0;
+            tutorialNext.innerText = tutorialStep === tutorialSteps.length - 1 ? 'DONE' : 'NEXT';
+        }
+
+        function closeTutorial() {
+            tutorialOverlay.classList.add('hidden');
+        }
+
+        if (tutorialOpen) {
+            tutorialOpen.addEventListener('click', () => showTutorial(0));
+        }
+        if (tutorialPrev) {
+            tutorialPrev.addEventListener('click', () => {
+                tutorialStep = Math.max(0, tutorialStep - 1);
+                renderTutorial();
+            });
+        }
+        if (tutorialNext) {
+            tutorialNext.addEventListener('click', () => {
+                if (tutorialStep >= tutorialSteps.length - 1) {
+                    closeTutorial();
+                } else {
+                    tutorialStep += 1;
+                    renderTutorial();
+                }
+            });
+        }
+        if (tutorialSkip) {
+            tutorialSkip.addEventListener('click', () => closeTutorial());
+        }
+
+        function playCultistSfx() {
+            playCultistClickSfx();
+        }
+
+        // --- Dialog System ---
+        function openDialog(npc) {
+            dialogOverlay.classList.remove('hidden');
+            dialogTitle.innerText = npc.name;
+            
+            if (npc.templateKey === 'commander_npc') {
+                dialogText.innerText = "Dockmaster: Ready to launch the wing to Sector 4? Hostile contacts are on the scope.";
+                dialogActionBtn.innerText = "LAUNCH MISSION";
+                dialogActionBtn.className = "px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold sci-fi-text transition-colors border border-red-400 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+                dialogActionBtn.disabled = false;
+                dialogActionBtn.onclick = () => {
+                    closeDialog();
+                    startMission();
+                };
+            } else {
+                dialogText.innerText = 'Add ' + npc.name + ' to your wing? (' + playerSquad.length + '/3 ships)';
+                if (playerSquad.length >= 3) {
+                    dialogActionBtn.disabled = true;
+                    dialogActionBtn.innerText = "WING FULL";
+                    dialogActionBtn.className = "px-4 py-2 bg-gray-600 text-white rounded font-bold sci-fi-text border border-gray-400 cursor-not-allowed";
+                } else {
+                    dialogActionBtn.disabled = false;
+                    dialogActionBtn.innerText = "ADD TO WING";
+                    dialogActionBtn.className = "px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold sci-fi-text transition-colors border border-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]";
+                    dialogActionBtn.onclick = () => {
+                        recruitUnit(npc);
+                        closeDialog();
+                    };
+                }
+            }
+        }
+
+        function closeDialog() {
+            dialogOverlay.classList.add('hidden');
+            // Small delay to prevent key bounce issues
+            setTimeout(() => { keys['e'] = false; }, 100);
+        }
+
+        function recruitUnit(unit) {
+            unit.faction = 'player';
+            unit.element.classList.add('unit-player');
+            unit.isHostile = false;
+            playerSquad.push(unit);
+            squadCounter.innerText = playerSquad.length;
+            renderInventory();
+            
+            const fx = document.createElement('div');
+            fx.className = 'absolute inset-0 bg-green-400 opacity-50 rounded-full animate-ping pointer-events-none';
+            unit.element.appendChild(fx);
+            setTimeout(()=>fx.remove(), 1000);
+        }
+
+        // --- Selection Logic ---
+        function selectAllPlayerUnits() {
+            deselectAll();
+            let unitsToSelect = gameState === 'EXPLORATION' ? [playerAvatar] : playerSquad;
+            if (unitsToSelect.length === 0) return;
+            selectedUnits = [...unitsToSelect];
+            selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
+            updateConsoleUI(pickHudUnit(selectedUnits));
+        }
+
+        function selectUnit(unitData, element) {
+            deselectAll();
+            selectedUnits = [unitData];
+            element.classList.add('unit-selected');
+            updateConsoleUI(unitData);
+        }
+
+        function deselectAll() {
+            selectedUnits.forEach(u => u.element && u.element.classList.remove('unit-selected'));
+            selectedUnits = [];
+            resetConsoleUI();
+        }
+
+        // --- Missions ---
+        function startMission() {
+            if (playerSquad.length < 3) {
+                showHudNotice('Assemble 3 ships before launch.');
+                return;
+            }
+            gameState = 'MISSION';
+            battleActive = false;
+            interactionTooltip.classList.add('hidden');
+            currentInteractable = null;
+            deselectAll();
+
+            spawnWalls();
+            hideTerrainBarriers();
+
+            missionActive = true;
+            playerPoints = 0;
+            enemyPoints = 0;
+            enemySummonTimer = 0;
+            initZones();
+            updateMissionStatus();
+            
+            modeText.innerText = 'COMBAT MISSION';
+            modeText.className = 'text-red-500 font-bold';
+            sectorText.innerText = 'SECTOR 4 - ENGAGEMENT ZONE';
+            sectorText.className = 'sci-fi-text tracking-widest text-red-500 animate-pulse';
+            
+            // Show mission UI controls
+            document.getElementById('mission-controls-title').classList.remove('hidden');
+            document.querySelectorAll('.mission-controls').forEach(el => el.classList.remove('hidden'));
+            
+            // Remove neutral units and commander
+            for (let i = allEntities.length - 1; i >= 0; i--) {
+                const u = allEntities[i];
+                if (u.faction === 'neutral' || u.templateKey === 'commander_npc') {
+                    u.element.remove();
+                    allEntities.splice(i, 1);
+                }
+            }
+
+            // Clear any existing enemies
+            for (let i = allEntities.length - 1; i >= 0; i--) {
+                if (allEntities[i].faction === 'enemy') {
+                    allEntities[i].element.remove();
+                    allEntities.splice(i, 1);
+                }
+            }
+            
+            // Group up squad + avatar
+            if (!playerSquad.includes(playerAvatar)) {
+                playerSquad.unshift(playerAvatar); // Avatar joins the fight as leader!
+            }
+
+            playerSquad.forEach((u, i) => {
+                u.x = 100 + (i % 2) * 50;
+                u.y = 100 + (Math.floor(i/2) * 80);
+                u.targetX = u.x;
+                u.targetY = u.y;
+                u.state = 'IDLE';
+                u.element.style.left = u.x + 'px';
+                u.element.style.top = u.y + 'px';
+            });
+
+            // Initial enemy patrol
+            spawnUnit('cultist', 760, 140, false);
+            spawnUnit('cultist', 780, 200, false);
+            spawnUnit('marine', 720, 240, false);
+            
+            selectAllPlayerUnits();
+        }
+
+        // --- Game Loop (Physics & Combat) ---
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastFrameTime) / 1000;
+            lastFrameTime = timestamp;
+            const now = performance.now() / 1000;
+
+            if (gameState === 'MISSION' && missionActive) {
+                updateZones(dt);
+                updateMissionStatus();
+                enemySummonTimer += dt;
+                if (enemySummonTimer > 4) {
+                    enemySummonTimer = 0;
+                    tryEnemySummon();
+                }
+                enemyZoneTimer += dt;
+                if (enemyZoneTimer > 2.5) {
+                    enemyZoneTimer = 0;
+                    directEnemyToZones();
+                }
+                pressureTimer += dt;
+                if (pressureTimer > 12) {
+                    pressureTimer = 0;
+                    sendPressureWave();
+                }
+            }
+
+            if (gameState === 'EXPLORATION') {
+                // WASD movement for avatar
+                let dx = 0, dy = 0;
+                if (keys['w']) dy -= 1;
+                if (keys['s']) dy += 1;
+                if (keys['a']) dx -= 1;
+                if (keys['d']) dx += 1;
+                
+                if (dx !== 0 || dy !== 0) {
+                    const len = Math.hypot(dx, dy);
+                    playerAvatar.x += (dx/len) * 200 * dt;
+                    playerAvatar.y += (dy/len) * 200 * dt;
+                    
+                    // Simple bounds checking
+                    const padding = 30;
+                    playerAvatar.x = Math.max(padding, Math.min(window.innerWidth - padding, playerAvatar.x));
+                    playerAvatar.y = Math.max(padding, Math.min(window.innerHeight - 250, playerAvatar.y)); // 250 for bottom console
+
+                    playerAvatar.element.style.left = playerAvatar.x + 'px';
+                    playerAvatar.element.style.top = playerAvatar.y + 'px';
+                }
+
+                // Check interaction range
+                let closestNPC = null;
+                let minDist = 80; 
+                allEntities.forEach(u => {
+                    if (u !== playerAvatar && (u.faction === 'neutral' || u.templateKey === 'commander_npc')) {
+                        const dist = Math.hypot(u.x - playerAvatar.x, u.y - playerAvatar.y);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestNPC = u;
+                        }
+                    }
+                });
+
+                if (closestNPC && dialogOverlay.classList.contains('hidden')) {
+                    interactionTooltip.style.left = closestNPC.x + 'px';
+                    interactionTooltip.style.top = (closestNPC.y - 40) + 'px';
+                    interactionTooltip.classList.remove('hidden');
+                    currentInteractable = closestNPC;
+                } else {
+                    interactionTooltip.classList.add('hidden');
+                    currentInteractable = null;
+                }
+            }
+
+            // Entity logic
+            allEntities.forEach(unit => {
+                updateAbilityStates(unit, now);
+                if (unit.empActive) {
+                    unit.state = 'IDLE';
+                    return;
+                }
+                // Block RTS movement during exploration
+                if (gameState === 'EXPLORATION' && unit.faction === 'player') {
+                    unit.state = 'IDLE';
+                    return;
+                }
+
+                if (gameState === 'MISSION' && unit.holdZoneId && !unit.combatTarget) {
+                    const zone = getZoneById(unit.holdZoneId);
+                    if (zone) {
+                        const inside = unit.x >= zone.x && unit.x <= zone.x + zone.w && unit.y >= zone.y && unit.y <= zone.y + zone.h;
+                        if (!inside && unit.state === 'IDLE') {
+                            unit.targetX = zone.x + zone.w / 2;
+                            unit.targetY = zone.y + zone.h / 2;
+                            unit.state = 'MOVING';
+                        }
+                    }
+                }
+
+                // 1. Target Acquisition (All units auto-acquire in MISSION mode)
+                if (gameState === 'MISSION' && unit.state !== 'ATTACKING') {
+                    if (unit.forcedMove && unit.state === 'MOVING') {
+                        // Ignore auto-targeting while executing a direct move order
+                    } else if (unit.manualOrderUntil && now < unit.manualOrderUntil) {
+                        // Respect manual move orders briefly
+                    } else {
+                    const enemyFaction = unit.faction === 'player' ? 'enemy' : 'player';
+                    if (!unit.combatTarget || unit.combatTarget.hp <= 0 || !allEntities.includes(unit.combatTarget)) {
+                        let closestEnemy = null;
+                        let minDist = COMBAT_TUNING.sightRange; // Sight range for auto-engage
+                        
+                        allEntities.forEach(potentialTarget => {
+                            if (potentialTarget.faction === enemyFaction && potentialTarget.hp > 0) {
+                                const d = Math.hypot(potentialTarget.x - unit.x, potentialTarget.y - unit.y);
+                                if (d < minDist) {
+                                    minDist = d;
+                                    closestEnemy = potentialTarget;
+                                }
+                            }
+                        });
+                        unit.combatTarget = closestEnemy;
+                    }
+
+                    if (unit.combatTarget) {
+                        const distToTarget = Math.hypot(unit.combatTarget.x - unit.x, unit.combatTarget.y - unit.y);
+                        if (distToTarget <= unit.attackRange * 1.1) {
+                            unit.targetX = unit.x;
+                            unit.targetY = unit.y;
+                            unit.state = 'ATTACKING';
+                        } else if (unit.state === 'IDLE' || unit.state === 'ATTACK_MOVING') {
+                            // Stop short to prevent orbiting
+                            const dx = unit.combatTarget.x - unit.x;
+                            const dy = unit.combatTarget.y - unit.y;
+                            const dist = Math.hypot(dx, dy) || 1;
+                            const stopDist = unit.attackRange * 0.85;
+                            unit.targetX = unit.combatTarget.x - (dx / dist) * stopDist;
+                            unit.targetY = unit.combatTarget.y - (dy / dist) * stopDist;
+                            unit.state = 'ATTACK_MOVING'; 
+                        }
+                    } else if (unit.state === 'ATTACK_MOVING') {
+                        unit.state = 'IDLE'; 
+                    }
+                    }
+                }
+
+                if (unit.state === 'IDLE') return;
+
+                // 2. Combat Resolution
+                if (unit.state === 'ATTACKING') {
+                    if (!unit.combatTarget || unit.combatTarget.hp <= 0 || !allEntities.includes(unit.combatTarget)) {
+                        unit.state = 'IDLE';
+                        unit.combatTarget = null;
+                    } else {
+                        const distToTarget = Math.hypot(unit.combatTarget.x - unit.x, unit.combatTarget.y - unit.y);
+                        if (distToTarget > unit.attackRange * 1.15) {
+                            unit.state = 'ATTACK_MOVING';
+                        } else {
+                            if (now - unit.lastAttackTime >= unit.attackCooldown) {
+                                performAttack(unit, unit.combatTarget);
+                                unit.lastAttackTime = now;
+                            }
+                        }
+                    }
+                    return; 
+                }
+
+                // 3. Movement Execution
+                if (unit.state === 'MOVING' || unit.state === 'ATTACK_MOVING') {
+                    const dx = unit.targetX - unit.x;
+                    const dy = unit.targetY - unit.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < 5) {
+                        if (unit.state === 'ATTACK_MOVING' && unit.combatTarget) {
+                            const stillFar = Math.hypot(unit.combatTarget.x - unit.x, unit.combatTarget.y - unit.y) > unit.attackRange;
+                            unit.state = stillFar ? 'ATTACK_MOVING' : 'ATTACKING';
+                        } else {
+                            unit.state = 'IDLE';
+                        }
+                        if (unit.forcedMove) unit.forcedMove = false;
+                    } else {
+                        const move = getNextPosition(unit, dx / dist, dy / dist, dt);
+                        unit.x = move.x;
+                        unit.y = move.y;
+                        unit.element.style.left = unit.x + 'px';
+                        unit.element.style.top = unit.y + 'px';
+
+                        if (unit.templateKey === 'sorcerer') {
+                            const gdrillImg = unit.element.querySelector('.gdrill-sprite');
+                            if (gdrillImg) {
+                                const flip = dx < 0 ? -1 : 1;
+                                let tilt = 0;
+                                let bob = 0;
+                                if (dy < -6) {
+                                    tilt = -4;
+                                    bob = -4;
+                                } else if (dy > 6) {
+                                    tilt = 4;
+                                    bob = 4;
+                                }
+                                gdrillImg.style.transform = `scaleX(${flip}) rotate(${tilt}deg) translateY(${bob}px)`;
+                            }
+                        }
+                        if (unit.templateKey === 'marine') {
+                            const marineImg = unit.element.querySelector('.marine-sprite');
+                            if (marineImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                let tilt = 0;
+                                let bob = 0;
+                                if (dy < -6) {
+                                    tilt = -4;
+                                    bob = -4;
+                                } else if (dy > 6) {
+                                    tilt = 4;
+                                    bob = 4;
+                                }
+                                marineImg.style.transform = `scaleX(${flip}) rotate(${tilt}deg) translateY(${bob}px)`;
+                            }
+                        }
+                        if (unit.templateKey === 'dreadstar') {
+                            const dreadImg = unit.element.querySelector('.dreadstar-sprite');
+                            if (dreadImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                dreadImg.style.transform = `scaleX(${flip})`;
+                            }
+                        }
+                        if (unit.templateKey === 'dreadmaw') {
+                            const mawImg = unit.element.querySelector('.dreadmaw-sprite');
+                            if (mawImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                mawImg.style.transform = `scaleX(${flip})`;
+                            }
+                        }
+                    }
+                }
+            });
+
+            applySeparation();
+            updateCohesion();
+            updateSeparation();
+
+            if (gameState === 'MISSION') {
+                updateMissionStatus();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function initZones() {
+            zoneElements.forEach(el => el.remove());
+            zoneElements = [];
+            zones = ZONE_DATA.map(zone => ({
+                ...zone,
+                owner: 'neutral',
+                capture: 0
+            }));
+            zones.forEach(zone => {
+                const el = document.createElement('div');
+                el.className = 'zone';
+                el.style.left = zone.x + 'px';
+                el.style.top = zone.y + 'px';
+                el.style.width = zone.w + 'px';
+                el.style.height = zone.h + 'px';
+                const label = document.createElement('div');
+                label.className = 'zone-label';
+                label.innerText = 'ZONE ' + zone.id;
+                el.appendChild(label);
+                world.appendChild(el);
+                zoneElements.push(el);
+                zone.element = el;
+                zone.label = label;
+            });
+        }
+
+        function updateZones(dt) {
+            const captureRate = 18;
+            zones.forEach(zone => {
+                let playerCount = 0;
+                let enemyCount = 0;
+                allEntities.forEach(u => {
+                    if (u.hp <= 0) return;
+                    if (u.x >= zone.x && u.x <= zone.x + zone.w && u.y >= zone.y && u.y <= zone.y + zone.h) {
+                        if (u.faction === 'player') playerCount += 1;
+                        if (u.faction === 'enemy') enemyCount += 1;
+                    }
+                });
+
+                if (playerCount > 0 && enemyCount === 0) {
+                    zone.capture = Math.max(-100, Math.min(100, zone.capture + captureRate * dt));
+                } else if (enemyCount > 0 && playerCount === 0) {
+                    zone.capture = Math.max(-100, Math.min(100, zone.capture - captureRate * dt));
+                }
+
+                const prevOwner = zone.owner;
+                if (zone.capture >= 100) zone.owner = 'player';
+                else if (zone.capture <= -100) zone.owner = 'enemy';
+                else zone.owner = prevOwner;
+
+                if (prevOwner !== zone.owner) {
+                    zone.element.classList.remove('zone-player', 'zone-enemy');
+                    if (zone.owner === 'player') zone.element.classList.add('zone-player');
+                    if (zone.owner === 'enemy') zone.element.classList.add('zone-enemy');
+                }
+
+                if (zone.owner === 'player') playerPoints += zone.value * dt;
+                if (zone.owner === 'enemy') enemyPoints += zone.value * dt;
+            });
+            const allPlayer = zones.length > 0 && zones.every(z => z.owner === 'player');
+            if (allPlayer) {
+                if (!holdStartTime) holdStartTime = performance.now() / 1000;
+            } else {
+                holdStartTime = null;
+            }
+        }
+
+        function updateMissionStatus() {
+            if (!missionStatus || !missionPointsEl) return;
+            if (gameState !== 'MISSION') {
+                missionStatus.innerText = 'Stand by for deployment.';
+                missionPointsEl.innerText = 'Points: 0 | Enemy: 0';
+                return;
+            }
+            const zoneText = zones.map(z => z.id + ':' + (z.owner === 'player' ? 'P' : z.owner === 'enemy' ? 'E' : '-')).join(' ');
+            missionStatus.innerText = 'Zones ' + zoneText;
+            const holdLeft = holdStartTime ? Math.max(0, 30 - ((performance.now() / 1000) - holdStartTime)) : null;
+            const holdText = holdLeft !== null ? ' | Hold: ' + holdLeft.toFixed(1) + 's' : '';
+            const playerRate = zones.filter(z => z.owner === 'player').reduce((sum, z) => sum + z.value, 0);
+            const enemyRate = zones.filter(z => z.owner === 'enemy').reduce((sum, z) => sum + z.value, 0);
+            missionPointsEl.innerText =
+                'Points: ' + Math.floor(playerPoints) + ' (+' + playerRate + '/s)' +
+                ' | Enemy: ' + Math.floor(enemyPoints) + ' (+' + enemyRate + '/s)' +
+                holdText;
+            updateSummonButtons();
+
+            if (holdStartTime && (performance.now() / 1000) - holdStartTime >= 30) {
+                missionActive = false;
+                sectorText.innerText = 'VICTORY - SECTORS SECURED';
+                sectorText.className = 'sci-fi-text tracking-widest text-green-400 font-bold text-lg';
+                showHudNotice('Victory! You held all three sectors for 30 seconds.');
+            }
+        }
+
+        function updateSummonButtons() {
+            document.querySelectorAll('.summon-btn').forEach(btn => {
+                const type = btn.getAttribute('data-summon');
+                const cost = summonCosts[type] || 0;
+                const enabled = gameState === 'MISSION' && playerPoints >= cost;
+                btn.disabled = !enabled;
+                btn.classList.toggle('opacity-50', !enabled);
+            });
+        }
+
+        function summonUnit(type) {
+            const cost = summonCosts[type];
+            if (!cost || playerPoints < cost) return;
+            playerPoints -= cost;
+            const baseX = 140;
+            const baseY = 260;
+            const unit = spawnUnit(
+                type,
+                baseX + Math.random() * 80 - 40,
+                baseY + Math.random() * 120 - 60,
+                true
+            );
+            playerSquad.push(unit);
+            updateMissionStatus();
+        }
+
+        function tryEnemySummon() {
+            const options = ['cultist', 'marine', 'sorcerer', 'dreadstar', 'dreadmaw'];
+            const affordable = options.filter(t => enemyPoints >= summonCosts[t]);
+            if (affordable.length === 0) return;
+            const choice = affordable[Math.floor(Math.random() * affordable.length)];
+            enemyPoints -= summonCosts[choice];
+            spawnUnit(choice, 820 + Math.random() * 40 - 20, 160 + Math.random() * 40 - 20, false);
+        }
+
+        function directEnemyToZones() {
+            if (zones.length === 0) return;
+            const enemyUnits = allEntities.filter(u => u.faction === 'enemy' && u.hp > 0);
+            if (enemyUnits.length === 0) return;
+            const targetZone = zones
+                .filter(z => z.owner !== 'enemy')
+                .sort((a, b) => b.value - a.value)[0] || zones[0];
+            enemyUnits.forEach((u, idx) => {
+                if (u.combatTarget || u.forcedMove) return;
+                u.holdZoneId = targetZone.id;
+                u.targetX = targetZone.x + targetZone.w / 2 + (idx % 3) * 20 - 20;
+                u.targetY = targetZone.y + targetZone.h / 2 + Math.floor(idx / 3) * 20;
+                u.state = 'MOVING';
+            });
+        }
+
+        function sendPressureWave() {
+            if (gameState !== 'MISSION') return;
+            const baseX = 780;
+            const baseY = 120;
+            const units = ['cultist', 'cultist', 'marine'];
+            units.forEach((type, i) => {
+                spawnUnit(type, baseX + i * 30, baseY + i * 25, false);
+            });
+            if (playerPoints > 30 || enemyPoints > 30) {
+                spawnUnit('sorcerer', baseX + 90, baseY + 70, false);
+            }
+        }
+
+        function spawnWalls() {
+            if (wallElements.length > 0) return;
+            WALLS.forEach(w => {
+                const wall = document.createElement('div');
+                wall.className = 'wall';
+                wall.style.left = w.x + 'px';
+                wall.style.top = w.y + 'px';
+                wall.style.width = w.w + 'px';
+                wall.style.height = w.h + 'px';
+                world.appendChild(wall);
+                wallElements.push(wall);
+            });
+        }
+
+        function spawnTerrainBarriers() {
+            if (barrierElements.length > 0 || rampElements.length > 0) return;
+            TERRAIN_BARRIERS.forEach(b => {
+                const el = document.createElement('div');
+                el.className = 'barrier';
+                el.style.left = b.x + 'px';
+                el.style.top = b.y + 'px';
+                el.style.width = b.w + 'px';
+                el.style.height = b.h + 'px';
+                world.appendChild(el);
+                barrierElements.push(el);
+            });
+            TERRAIN_RAMPS.forEach(r => {
+                const el = document.createElement('div');
+                el.className = 'ramp';
+                el.style.left = r.x + 'px';
+                el.style.top = r.y + 'px';
+                el.style.width = r.w + 'px';
+                el.style.height = r.h + 'px';
+                world.appendChild(el);
+                rampElements.push(el);
+            });
+        }
+
+        function hideTerrainBarriers() {
+            barrierElements.forEach(el => el.classList.add('hidden'));
+            rampElements.forEach(el => el.classList.add('hidden'));
+        }
+
+        function collidesWithWall(x, y) {
+            if (gameState !== 'MISSION') return false;
+            const radius = 18;
+            const hitWall = WALLS.some(w =>
+                x + radius > w.x &&
+                x - radius < w.x + w.w &&
+                y + radius > w.y &&
+                y - radius < w.y + w.h
+            );
+            if (hitWall) return true;
+
+            return false;
+        }
+
+        function getNextPosition(unit, dirX, dirY, dt) {
+            const speed = unit.speed * dt;
+            const nx = unit.x + dirX * speed;
+            const ny = unit.y + dirY * speed;
+            return { x: nx, y: ny };
+        }
+
+        function updateCohesion() {
+            if (gameState !== 'MISSION') return;
+            const players = allEntities.filter(u => u.faction === 'player');
+            if (players.length === 0) return;
+            const center = players.reduce((acc, u) => ({ x: acc.x + u.x, y: acc.y + u.y }), { x: 0, y: 0 });
+            center.x /= players.length;
+            center.y /= players.length;
+            players.forEach(u => {
+                if (u.holdZoneId) return;
+                if (u.templateKey === 'dreadstar') return;
+                if (u.combatTarget || u.state === 'ATTACKING' || u.state === 'ATTACK_MOVING') return;
+                const d = Math.hypot(u.x - center.x, u.y - center.y);
+                if (d > COMBAT_TUNING.cohesionRange && u.state === 'IDLE') {
+                    u.targetX = center.x;
+                    u.targetY = center.y;
+                    u.state = 'MOVING';
+                }
+            });
+        }
+
+        function updateSeparation() {
+            if (gameState !== 'MISSION') return;
+            allEntities.forEach(u => {
+                if (u.state !== 'ATTACK_MOVING' || u.combatTarget) return;
+                const sep = 36;
+                let pushX = 0;
+                let pushY = 0;
+                allEntities.forEach(o => {
+                    if (o === u || o.faction !== u.faction) return;
+                    const dx = u.x - o.x;
+                    const dy = u.y - o.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 0 && dist < sep) {
+                        pushX += dx / dist;
+                        pushY += dy / dist;
+                    }
+                });
+                if (pushX !== 0 || pushY !== 0) {
+                    const len = Math.hypot(pushX, pushY);
+                    u.targetX += (pushX / len) * 10;
+                    u.targetY += (pushY / len) * 10;
+                }
+            });
+        }
+
+        function applySeparation() {
+            const minDist = COMBAT_TUNING.separationDistance;
+            const strength = COMBAT_TUNING.separationStrength;
+            for (let i = 0; i < allEntities.length; i++) {
+                const a = allEntities[i];
+                for (let j = i + 1; j < allEntities.length; j++) {
+                    const b = allEntities[j];
+                    const dx = a.x - b.x;
+                    const dy = a.y - b.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist === 0 || dist >= minDist) continue;
+
+                    const aMovable = a.speed > 0;
+                    const bMovable = b.speed > 0;
+                    if (!aMovable && !bMovable) continue;
+
+                    const push = ((minDist - dist) / minDist) * strength;
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    const aWeight = aMovable ? (bMovable ? 0.5 : 1) : 0;
+                    const bWeight = bMovable ? (aMovable ? 0.5 : 1) : 0;
+
+                    if (aMovable) {
+                        a.x += nx * push * aWeight;
+                        a.y += ny * push * aWeight;
+                        a.element.style.left = a.x + 'px';
+                        a.element.style.top = a.y + 'px';
+                    }
+                    if (bMovable) {
+                        b.x -= nx * push * bWeight;
+                        b.y -= ny * push * bWeight;
+                        b.element.style.left = b.x + 'px';
+                        b.element.style.top = b.y + 'px';
+                    }
+                }
+            }
+        }
+
+        // --- Battle System (Pokemon-Style) ---
+        function startBattle(enemyUnit) {
+            if (!enemyUnit) return;
+            closeConversation();
+            closeHudDialog();
+            if (activeSquad.length < 3) {
+                showHudNotice('Select 3 ships before sortie.');
+                return;
+            }
+            battleActive = true;
+            gameState = 'BATTLE';
+            battleEnemy = enemyUnit;
+            battlePlayerUnits = activeSquad.slice(0, 3);
+            battleSelectedIndex = 0;
+            battleTurn = 'PLAYER';
+            battleHpSnapshot = [
+                { unit: battleEnemy, hp: battleEnemy.hp, energy: battleEnemy.energy },
+                ...battlePlayerUnits.map(u => ({ unit: u, hp: u.hp, energy: u.energy }))
+            ];
+            battleOverlay.classList.remove('hidden');
+            renderBattleUI();
+            selectBattleUnit(0);
+            battleTurnText.innerText = 'Your Turn';
+            movesGrid.classList.remove('pointer-events-none', 'opacity-50');
+            battleLog = [];
+            setBattleLogHeader();
+            addBattleLog('Battle started vs ' + battleEnemy.name + '.');
+        }
+
+        function endBattle(victory) {
+            battleActive = false;
+            battleOverlay.classList.add('hidden');
+            gameState = 'EXPLORATION';
+            battleHpSnapshot.forEach(entry => {
+                if (entry.unit) {
+                    entry.unit.hp = entry.hp;
+                    entry.unit.energy = entry.energy;
+                }
+            });
+            battleEnemy = null;
+            battlePlayerUnits = [];
+            battleTurn = 'PLAYER';
+            movesGrid.classList.add('pointer-events-none', 'opacity-50');
+            resetConsoleUI();
+        }
+
+        function startBattleWithCommander() {
+            if (activeSquad.length < 3) {
+                showHudNotice('Select 3 ships in Inventory first.');
+                return;
+            }
+            // Commander triggers battle without removing him from the hub
+            const commander = allEntities.find(u => u.templateKey === 'commander_npc');
+            if (!commander) return;
+            startBattle(commander);
+        }
+
+        function renderBattleUI() {
+            // Enemy
+            battleEnemySlot.innerHTML = '';
+            if (battleEnemy) {
+                const enemyWrap = document.createElement('div');
+                enemyWrap.className = 'flex flex-col items-center justify-center';
+                const sprite = document.createElement('div');
+                sprite.className = 'w-20 h-20 flex items-center justify-center';
+                sprite.innerHTML = battleEnemy.spriteSvg;
+                const name = document.createElement('div');
+                name.className = 'text-xs text-red-200 font-bold mt-2';
+                name.innerText = battleEnemy.name;
+                enemyWrap.appendChild(sprite);
+                enemyWrap.appendChild(name);
+                battleEnemySlot.appendChild(enemyWrap);
+                battleEnemyHp.innerText = Math.max(0, Math.floor(battleEnemy.hp)) + ' / ' + battleEnemy.maxHp;
+                battleEnemyHpBar.style.width = Math.max(0, (battleEnemy.hp / battleEnemy.maxHp) * 100) + '%';
+            }
+
+            // Players
+            battlePlayerSlots.forEach((slot, idx) => {
+                slot.innerHTML = '';
+                const unit = battlePlayerUnits[idx];
+                if (!unit) {
+                    slot.classList.add('opacity-40');
+                    return;
+                }
+                slot.classList.remove('opacity-40');
+                const wrap = document.createElement('div');
+                wrap.className = 'flex items-center gap-3';
+                const sprite = document.createElement('div');
+                sprite.className = 'w-14 h-14 flex items-center justify-center';
+                sprite.innerHTML = unit.spriteSvg;
+                const info = document.createElement('div');
+                info.className = 'text-xs';
+                const hpText = unit.hp > 0 ? ('HP ' + Math.max(0, Math.floor(unit.hp)) + '/' + unit.maxHp) : 'DOWN';
+                info.innerHTML = '<div class="text-slate-200 font-bold">' + unit.name + '</div>' +
+                    '<div class="text-slate-400">' + hpText + '</div>';
+                wrap.appendChild(sprite);
+                wrap.appendChild(info);
+                slot.appendChild(wrap);
+            });
+        }
+
+        function selectBattleUnit(index) {
+            if (!battleActive) return;
+            const unit = battlePlayerUnits[index];
+            if (!unit || unit.hp <= 0) return;
+            battleSelectedIndex = index;
+            battlePlayerSlots.forEach((slot, idx) => {
+                slot.classList.toggle('border-amber-400', idx === index);
+                slot.classList.toggle('shadow-[0_0_10px_rgba(217,119,6,0.4)]', idx === index);
+            });
+            updateConsoleUI(unit, true);
+            playUnitVoice(unit);
+        }
+
+        function handleBattleMove(moveIndex) {
+            if (!battleActive || battleTurn !== 'PLAYER') return;
+            if (moveIndex > 1) return; // locked moves
+            const unit = battlePlayerUnits[battleSelectedIndex];
+            if (!unit || unit.hp <= 0) return;
+
+            const damage = Math.max(5, Math.floor(unit.attackDamage * (moveIndex === 0 ? 1.0 : 1.2)));
+            battleEnemy.hp = Math.max(0, battleEnemy.hp - damage);
+            addBattleLog(unit.name + ' used ' + (unit.moves[moveIndex] ? unit.moves[moveIndex].name : 'Attack') + ' for ' + damage + ' damage.');
+            renderBattleUI();
+            flashBattleTarget(battleEnemySlot);
+
+            if (battleEnemy.hp <= 0) {
+                battleTurnText.innerText = 'Enemy Defeated';
+                addBattleLog(battleEnemy.name + ' was defeated.');
+                endBattle(true);
+                return;
+            }
+
+            battleTurn = 'ENEMY';
+            battleTurnText.innerText = 'Enemy Turn';
+            setTimeout(enemyTurn, 1200);
+        }
+
+        function enemyTurn() {
+            if (!battleActive || !battleEnemy) return;
+            const living = battlePlayerUnits.filter(u => u && u.hp > 0);
+            if (living.length === 0) {
+                battleTurnText.innerText = 'Squad Defeated';
+                addBattleLog('Your squad was defeated.');
+                endBattle(false);
+                return;
+            }
+            const target = living[Math.floor(Math.random() * living.length)];
+            const damage = Math.max(4, Math.floor(battleEnemy.attackDamage));
+            target.hp = Math.max(0, target.hp - damage);
+            addBattleLog(battleEnemy.name + ' hit ' + target.name + ' for ' + damage + ' damage.');
+            renderBattleUI();
+            const targetIndex = battlePlayerUnits.indexOf(target);
+            if (targetIndex >= 0) {
+                flashBattleTarget(battlePlayerSlots[targetIndex]);
+            }
+            if (target.hp <= 0) {
+                // auto-select next living unit
+                addBattleLog(target.name + ' was knocked out.');
+                const nextIdx = battlePlayerUnits.findIndex(u => u && u.hp > 0);
+                if (nextIdx >= 0) selectBattleUnit(nextIdx);
+            }
+            battleTurn = 'PLAYER';
+            battleTurnText.innerText = 'Your Turn';
+        }
+
+        function flashBattleTarget(el) {
+            if (!el) return;
+            el.classList.remove('hit-flash');
+            void el.offsetWidth;
+            el.classList.add('hit-flash');
+        }
+
+        function performAttack(attacker, target) {
+            if (!attacker.canAttack) return;
+            let damage = attacker.attackDamage;
+            if (target.shieldActive) damage *= 0.4;
+            if (target.smokeActive) damage *= 0.7;
+            target.hp -= damage;
+            createLaser(attacker, target);
+            if (attacker.templateKey === 'dreadstar') {
+                createLaser(attacker, target, -6);
+                createLaser(attacker, target, 6);
+            }
+
+            // Return fire / target swap
+            if (gameState === 'MISSION' && target.hp > 0) {
+                target.combatTarget = attacker;
+                const distToAttacker = Math.hypot(attacker.x - target.x, attacker.y - target.y);
+                target.state = distToAttacker <= target.attackRange ? 'ATTACKING' : 'ATTACK_MOVING';
+            }
+            
+            const hpFill = document.getElementById('hp-fill-' + target.id);
+            if (hpFill) {
+                const pct = Math.max(0, (target.hp / target.maxHp) * 100);
+                hpFill.style.width = pct + '%';
+                hpFill.className = 'h-full transition-all duration-100 ' + (pct > 50 ? 'bg-green-500' : (pct > 20 ? 'bg-yellow-500' : 'bg-red-500'));
+            }
+
+            if (selectedUnits.includes(target)) {
+                unitHpEl.innerText = Math.floor(target.hp) + ' / ' + target.maxHp;
+                hpBar.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
+            }
+
+            if (target.hp <= 0) die(target);
+        }
+
+        function createLaser(attacker, target, offsetY = 0) {
+            const line = document.createElement('div');
+            line.className = 'absolute z-20 pointer-events-none origin-left';
+            line.style.backgroundColor = attacker.faction === 'enemy' ? '#a855f7' : '#ef4444';
+            line.style.boxShadow = '0 0 8px ' + (attacker.faction === 'enemy' ? '#a855f7' : '#ef4444');
+            line.style.height = '4px';
+            line.style.left = attacker.x + 'px';
+            line.style.top = (attacker.y + offsetY) + 'px';
+            
+            const dx = target.x - attacker.x;
+            const dy = target.y - attacker.y;
+            const length = Math.hypot(dx, dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.transform = 'rotate(' + angle + 'deg)';
+            
+            world.appendChild(line);
+            
+            line.animate([{opacity: 1}, {opacity: 0}], {duration: COMBAT_TUNING.tracerDuration, fill: 'forwards'});
+            setTimeout(() => line.remove(), COMBAT_TUNING.tracerDuration);
+        }
+
+        function die(unit) {
+            unit.element.style.filter = 'grayscale(100%) brightness(50%)';
+            unit.element.classList.remove('anim-breathe', 'anim-hover', 'anim-jitter');
+            unit.element.classList.add('scale-75', 'opacity-50');
+            unit.element.style.pointerEvents = 'none';
+
+            const idx = allEntities.indexOf(unit);
+            if (idx > -1) allEntities.splice(idx, 1);
+            
+            const pIdx = playerSquad.indexOf(unit);
+            if (pIdx > -1) {
+                playerSquad.splice(pIdx, 1);
+                // Adjust counter to not include player avatar if we want strict recruit count
+                // Actually playerSquad includes avatar during mission. We don't need to update UI recruit counter during mission.
+            }
+            
+            const sIdx = selectedUnits.indexOf(unit);
+            if (sIdx > -1) {
+                selectedUnits.splice(sIdx, 1);
+                if(selectedUnits.length === 0) resetConsoleUI();
+                else updateConsoleUI(selectedUnits[0]);
+            }
+            
+            setTimeout(() => unit.element && unit.element.remove(), 2000);
+
+            if (gameState === 'MISSION') {
+                const enemiesLeft = allEntities.filter(e => e.faction === 'enemy');
+                const playersLeft = allEntities.filter(e => e.faction === 'player');
+                if (enemiesLeft.length === 0) {
+                    sectorText.innerText = 'MISSION ACCOMPLISHED - SECTOR CLEARED';
+                    sectorText.className = 'sci-fi-text tracking-widest text-green-500 animate-pulse font-bold text-lg';
+                } else if (playersLeft.length === 0) {
+                    sectorText.innerText = 'MISSION FAILED - SQUAD ELIMINATED';
+                    sectorText.className = 'sci-fi-text tracking-widest text-gray-500 font-bold text-lg';
+                }
+            }
+        }
+
+        // --- UI Updates ---
+        function updateConsoleUI(unitData, isBattle = false) {
+            unitNameEl.innerText = unitData.name;
+            unitLevelEl.classList.remove('hidden');
+            levelValEl.innerText = unitData.level;
+            
+            unitHpEl.innerText = Math.floor(unitData.hp) + ' / ' + unitData.maxHp;
+            hpBar.style.width = Math.max(0, (unitData.hp / unitData.maxHp) * 100) + '%';
+            
+            unitEnergyEl.innerText = unitData.energy + ' / ' + unitData.maxEnergy;
+            energyBar.style.width = (unitData.energy / unitData.maxEnergy) * 100 + '%';
+
+            unitTypeEl.innerText = unitData.type;
+            unitTypeEl.className = 'px-2 py-0.5 text-xs font-bold rounded shadow-sm border ' + unitData.typeColor + ' text-white';
+            
+            unitDescEl.innerText = unitData.desc;
+            updateAbilityButtons(unitData);
+            updateSummonButtons();
+
+            portraitPlaceholder.classList.add('hidden');
+            portraitVideo.classList.remove('hidden');
+            scanlines.classList.remove('hidden');
+            portraitVideo.pause();
+            if (unitData.templateKey === 'dreadmaw') {
+                dreadmawPortraitToggle = !dreadmawPortraitToggle;
+                portraitVideo.src = dreadmawPortraitToggle ? 'character-animation(9).mp4' : 'character-animation(8).mp4';
+            } else {
+                portraitVideo.src = unitData.video || '';
+            }
+            portraitVideo.load();
+            let playPromise = portraitVideo.play();
+            if(playPromise !== undefined) playPromise.catch(e => console.log("Autoplay prevented"));
+            startPortraitStaticCycle();
+            portraitVideo.onended = () => {
+                const isDreadmaw = unitData.templateKey === 'dreadmaw';
+                if (!unitData.video && !isDreadmaw) return;
+                portraitVideo.pause();
+                portraitStatic.classList.remove('hidden');
+                portraitStatic.style.animation = 'none';
+                void portraitStatic.offsetWidth;
+                portraitStatic.style.animation = '';
+                setTimeout(() => {
+                    portraitStatic.classList.add('hidden');
+                    if (isDreadmaw) {
+                        dreadmawPortraitToggle = !dreadmawPortraitToggle;
+                        portraitVideo.src = dreadmawPortraitToggle ? 'character-animation(9).mp4' : 'character-animation(8).mp4';
+                        portraitVideo.load();
+                    } else {
+                        portraitVideo.currentTime = 0;
+                    }
+                    const replayPromise = portraitVideo.play();
+                    if (replayPromise !== undefined) replayPromise.catch(() => {});
+                }, 350);
+            };
+        }
+
+        function resetConsoleUI() {
+            unitNameEl.innerText = 'NO UNIT SELECTED';
+            unitLevelEl.classList.add('hidden');
+            
+            unitHpEl.innerText = '--/--';
+            hpBar.style.width = '0%';
+            unitEnergyEl.innerText = '--/--';
+            energyBar.style.width = '0%';
+            
+            unitTypeEl.innerText = '---';
+            unitTypeEl.className = 'px-2 py-0.5 text-xs font-bold rounded bg-slate-700 border border-slate-500 text-slate-300 shadow-sm';
+            
+            unitDescEl.innerText = 'Click on a unit to view details. Use W,A,S,D to walk and E to recruit.';
+            updateAbilityButtons(null);
+            updateSummonButtons();
+
+            portraitPlaceholder.classList.remove('hidden');
+            portraitVideo.classList.add('hidden');
+            scanlines.classList.add('hidden');
+            portraitVideo.pause();
+            stopPortraitStaticCycle();
+        }
+
+        function updateAbilityButtons(unit) {
+            const abilities = unit && unit.abilities ? unit.abilities : [];
+            const now = performance.now() / 1000;
+            const btns = [abilityBtn1, abilityBtn2];
+            btns.forEach((btn, idx) => {
+                if (!btn) return;
+                const ability = abilities[idx];
+                if (!ability) {
+                    btn.innerText = '---';
+                    btn.disabled = true;
+                    btn.onclick = null;
+                    return;
+                }
+                const cdEnd = unit.abilityCooldowns[ability.type] || 0;
+                const remain = Math.max(0, cdEnd - now);
+                btn.innerText = remain > 0 ? ability.name + ' (' + Math.ceil(remain) + 's)' : ability.name;
+                btn.disabled = remain > 0;
+                btn.onclick = () => useAbility(unit, ability);
+            });
+        }
+
+        function useAbility(unit, ability) {
+            const now = performance.now() / 1000;
+            const cdEnd = unit.abilityCooldowns[ability.type] || 0;
+            if (now < cdEnd) return;
+            unit.abilityCooldowns[ability.type] = now + ability.cooldown;
+            unit.abilityEnds[ability.type] = now + ability.duration;
+            if (ability.type === 'shield') {
+                unit.shieldActive = true;
+                unit.canAttack = false;
+                applyShieldFx(unit);
+                showShieldRadius(unit, ability.duration);
+                applyTeamShield(unit, ability.duration);
+            }
+            if (ability.type === 'smoke') {
+                unit.smokeActive = true;
+                applySmokeFx(unit);
+            }
+            if (ability.type === 'emp') {
+                applyEmp(unit, ability.duration);
+            }
+            if (ability.type === 'teleport') {
+                startTeleportMode(unit);
+            }
+            updateAbilityButtons(unit);
+        }
+
+        function applyEmp(caster, duration) {
+            const now = performance.now() / 1000;
+            const radius = Math.max(180, caster.attackRange * 1.1);
+            const ring = document.createElement('div');
+            ring.className = 'shield-radius';
+            ring.style.borderColor = 'rgba(34,197,94,0.7)';
+            ring.style.boxShadow = '0 0 18px rgba(34,197,94,0.7)';
+            ring.style.width = (radius * 2) + 'px';
+            ring.style.height = (radius * 2) + 'px';
+            ring.style.left = '50%';
+            ring.style.top = '50%';
+            ring.style.transform = 'translate(-50%, -50%)';
+            if (caster.element) caster.element.appendChild(ring);
+            setTimeout(() => ring.remove(), Math.max(500, duration * 1000));
+
+            allEntities.forEach(u => {
+                if (u.hp <= 0) return;
+                if (u.templateKey === 'dreadstar') return;
+                const d = Math.hypot(u.x - caster.x, u.y - caster.y);
+                if (d <= radius) {
+                    u.empActive = true;
+                    u.empEnds = now + duration;
+                    u.canAttack = false;
+                    u.state = 'IDLE';
+                }
+            });
+        }
+
+        function showShieldRadius(unit, duration) {
+            if (!unit || !unit.element) return;
+            const existing = unit.element.querySelector('.shield-radius');
+            if (existing) existing.remove();
+
+            const ring = document.createElement('div');
+            ring.className = 'shield-radius';
+            const radius = Math.max(140, unit.attackRange * 1.2);
+            ring.style.width = (radius * 2) + 'px';
+            ring.style.height = (radius * 2) + 'px';
+            ring.style.left = '50%';
+            ring.style.top = '50%';
+            ring.style.transform = 'translate(-50%, -50%)';
+            unit.element.appendChild(ring);
+            setTimeout(() => ring.remove(), Math.max(500, duration * 1000));
+        }
+
+        function applyTeamShield(caster, duration) {
+            if (!caster || caster.templateKey !== 'sorcerer') return;
+            const now = performance.now() / 1000;
+            const radius = Math.max(160, caster.attackRange * 1.1);
+            allEntities.forEach(u => {
+                if (u.faction !== caster.faction || u === caster || u.hp <= 0) return;
+                const d = Math.hypot(u.x - caster.x, u.y - caster.y);
+                if (d <= radius) {
+                    u.shieldActive = true;
+                    u.shieldFromGdrill = true;
+                    u.abilityEnds['shieldAura'] = now + duration;
+                    applyShieldFx(u);
+                }
+            });
+        }
+
+        function updateAbilityStates(unit, now) {
+            if (!unit.abilities) return;
+            if (unit.shieldActive && now >= (unit.abilityEnds['shield'] || 0)) {
+                unit.shieldActive = false;
+                unit.canAttack = true;
+                removeShieldFx(unit);
+            }
+            if (unit.shieldFromGdrill && now >= (unit.abilityEnds['shieldAura'] || 0)) {
+                unit.shieldFromGdrill = false;
+                unit.shieldActive = false;
+                removeShieldFx(unit);
+            }
+            if (unit.smokeActive && now >= (unit.abilityEnds['smoke'] || 0)) {
+                unit.smokeActive = false;
+                removeSmokeFx(unit);
+            }
+            if (unit.empActive && now >= (unit.empEnds || 0)) {
+                unit.empActive = false;
+                unit.canAttack = true;
+            }
+        }
+
+        function applyShieldFx(unit) {
+            if (!unit.element) return;
+            if (unit.element.querySelector('.shield-ring')) return;
+            const ring = document.createElement('div');
+            ring.className = 'shield-ring';
+            unit.element.appendChild(ring);
+        }
+
+        function removeShieldFx(unit) {
+            if (!unit.element) return;
+            const ring = unit.element.querySelector('.shield-ring');
+            if (ring) ring.remove();
+        }
+
+        function applySmokeFx(unit) {
+            if (!unit.element) return;
+            if (unit.element.querySelector('.smoke-cloud')) return;
+            const cloud = document.createElement('div');
+            cloud.className = 'smoke-cloud';
+            unit.element.appendChild(cloud);
+        }
+
+        function removeSmokeFx(unit) {
+            if (!unit.element) return;
+            const cloud = unit.element.querySelector('.smoke-cloud');
+            if (cloud) cloud.remove();
+        }
+
+        function startPortraitStaticCycle() {
+            stopPortraitStaticCycle();
+            // Periodic static burst (1s max) covering the portrait completely
+            portraitStaticInterval = setInterval(() => {
+                portraitStatic.classList.remove('hidden');
+                portraitStatic.style.animation = 'none';
+                void portraitStatic.offsetWidth;
+                portraitStatic.style.animation = 'static-flash 1s steps(2) 1';
+                portraitStaticTimeout = setTimeout(() => {
+                    portraitStatic.classList.add('hidden');
+                }, 1000);
+            }, 8000);
+        }
+
+        function stopPortraitStaticCycle() {
+            if (portraitStaticInterval) {
+                clearInterval(portraitStaticInterval);
+                portraitStaticInterval = null;
+            }
+            if (portraitStaticTimeout) {
+                clearTimeout(portraitStaticTimeout);
+                portraitStaticTimeout = null;
+            }
+            portraitStatic.classList.add('hidden');
+        }
+
+        // Start up
+        window.onload = initGame;
+    </script>
+</body>
+</html>

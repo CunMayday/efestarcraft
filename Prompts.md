@@ -1133,3 +1133,114 @@ This document tracks the conversation history, including the user's prompts, the
 **AI Agent:** Codex
 
 **Summary:** Made Dreadmaw's portrait alternate between `character-animation(9).mp4` and `character-animation(8).mp4` each time he is shown in the HUD.
+
+---
+
+## Prompt 119
+**User:** "when i say i want the animations to rotate, i want it so when i click on the character, it plays one of the two profiles (rotates) but also, when the animation finishes, it plays the other one. make the dreadmaw a hero"
+
+**AI Agent:** Codex
+
+**Summary:** Updated Dreadmaw portrait rotation so it alternates on selection and on video end; confirmed Dreadmaw is treated as a hero.
+
+---
+
+## Checkpoint 26
+**Files:** `index.checkpoint-026.html`
+**Notes:** Snapshot after Dreadmaw portrait alternation on end and click.
+
+---
+
+## Prompt 120
+**User:** "if i have multiple of the same unit selected (for example, 3 Dreadstar and 2 Rubric marines) I want it to so that if I press the hotkey for EMP (which I want to be E) multiple times, it will go through each character's EMP. same with dreadmaws for example. if i select a bunch and click while press T, they shoud all teleport"
+
+**AI Agent:** Codex
+
+**Summary:** Added EMP hotkey cycling across selected units and group teleport for all selected Dreadmaws with target indicator.
+
+---
+
+## Checkpoint 27
+**Files:** `index.checkpoint-027.html`
+**Notes:** Snapshot after EMP cycling and group teleport support.
+
+---
+
+## Prompt 121
+**User:** "lets add a new unit. i don't know what it should do, but the ship is called paintship.png. it is facing left, so when it is moving left, do not touch it, when it is moving right, reverse the image. the portrait is called gold.mp4. add that into the game, remove the background of the character, and suggest me ideas on what it should do"
+
+**AI Agent:** Codex
+
+**Summary:** Added Painship unit with left-default/right-flip behavior, imported portrait options (gold/char-anim(10)/redblack), removed background, and wired rotating portraits.
+
+---
+
+## Checkpoint 28
+**Files:** `index.checkpoint-028.html`
+**Notes:** Snapshot after adding Painship unit and rotating portraits.
+
+---
+
+## Prompt 122
+**User:** "there is a problem with the text. if it is over 2 lines, then the ability is pushed down under the screen."
+
+**AI Agent:** Codex
+
+**Summary:** Constrained unit ability button text with a fixed-height style to prevent long labels from pushing the HUD off-screen.
+
+---
+
+## Prompt 123
+**User:** "it hasnt changed, for example, the rubric marines hud description is too large"
+
+**AI Agent:** Codex
+
+**Summary:** Constrained the unit description area height to prevent long text from pushing HUD elements.
+
+---
+
+## Prompt 124
+**User:** "now, for the painmaker, i want it to cycle between these 3 voicelines"
+
+**AI Agent:** Codex
+
+**Summary:** Added Painship voice line cycling using collegemoney/tightspaces/joinup and wired new audio element.
+
+---
+
+## Prompt 125
+**User:** "yes add that too"
+
+**AI Agent:** Codex
+
+**Summary:** Added `beall.mp3` to Painship voice line rotation.
+
+---
+
+## Checkpoint 29
+**Files:** `index.checkpoint-029.html`
+**Notes:** Snapshot after Painship voice line update.
+
+---
+
+## Checkpoint 30
+**Files:** `index.checkpoint-030.html`
+**Notes:** Snapshot after Painship voice rotation update.
+
+---
+
+## Prompt 127
+**User:** "change fijis dreadstar name to battleship. i want it so if i hover over a units ability it says what it does"
+
+**AI Agent:** Codex
+
+**Summary:** Renamed Fiji's Dreadstar to Battleship and added ability hover tooltips describing effects.
+
+---
+
+## Prompt 128
+**User:** "i want you to play starcraft-2-attack.mp3 when i click on the dreadmaw"
+
+**AI Agent:** Codex
+
+**Summary:** Added Dreadmaw click SFX using `starcraft-2-attack.mp3`.

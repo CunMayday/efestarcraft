@@ -210,6 +210,21 @@
             cursor: not-allowed;
         }
 
+        .ability-core {
+            font-size: 10px;
+            line-height: 1.1;
+            padding: 4px 6px;
+            height: 34px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #unit-desc {
+            max-height: 3.2em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .shield-ring {
             position: absolute;
             inset: -6px;
@@ -482,6 +497,8 @@
         <audio id="cultist-sfx" preload="auto"></audio>
         <audio id="gdrill-sfx" preload="auto"></audio>
         <audio id="marine-sfx" preload="auto"></audio>
+        <audio id="painship-sfx" preload="auto"></audio>
+        <audio id="dreadmaw-sfx" preload="auto"></audio>
 
         <!-- 1. Portrait Section -->
         <div class="h-full aspect-square bg-black border-2 border-slate-700 rounded-lg relative overflow-hidden flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,1)] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTExIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMjIyIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+')]">
@@ -539,8 +556,8 @@
                             Click on a unit to view details. Use W,A,S,D to walk and E to recruit.
                         </p>
                         <div class="mt-3 grid grid-cols-2 gap-2">
-                            <button id="ability-1" class="ability-btn">---</button>
-                            <button id="ability-2" class="ability-btn">---</button>
+                            <button id="ability-1" class="ability-btn ability-core">---</button>
+                            <button id="ability-2" class="ability-btn ability-core">---</button>
                         </div>
                     </div>
                 </div>
@@ -592,6 +609,10 @@
                 <button class="ability-btn summon-btn bg-gradient-to-b from-pink-800 to-pink-900 border border-pink-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadmaw">
                     <span class="font-bold text-sm text-white drop-shadow">Dreadmaw</span>
                     <span class="text-xs text-pink-300">Cost 12</span>
+                </button>
+                <button class="ability-btn summon-btn bg-gradient-to-b from-amber-800 to-amber-900 border border-amber-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="painship">
+                    <span class="font-bold text-sm text-white drop-shadow">Painship</span>
+                    <span class="text-xs text-amber-300">Cost 6</span>
                 </button>
                 <button class="ability-btn summon-btn bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-500 rounded p-2 flex flex-col items-center justify-center transition-colors shadow-inner" data-summon="dreadstar">
                     <span class="font-bold text-sm text-white drop-shadow">Fiji's Dreadstar</span>
@@ -676,9 +697,12 @@
         let currentNpc = null;
         let tutorialStep = 0;
         let dreadmawPortraitToggle = false;
+        let painshipPortraitIndex = 0;
+        const painshipPortraits = ['gold.mp4', 'character-animation(10).mp4', 'redblack.mp4'];
         let cultistSfxIndex = 0;
         let gdrillSfxIndex = 0;
         let marineSfxIndex = 0;
+        let painshipSfxIndex = 0;
         let isDraggingSelect = false;
         let dragStart = { x: 0, y: 0 };
         let dragBox = null;
@@ -717,13 +741,15 @@
         let playerPoints = 0;
         let enemyPoints = 0;
         let enemySummonTimer = 0;
-        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15, dreadmaw: 12 };
+        const summonCosts = { cultist: 3, marine: 6, sorcerer: 10, dreadstar: 15, dreadmaw: 12, painship: 6 };
         let holdStartTime = null;
         let enemyZoneTimer = 0;
         let pressureTimer = 0;
         let teleportMode = false;
         let teleportIndicator = null;
         let teleportUnit = null;
+        let teleportUnits = [];
+        let empCycleIndex = 0;
 
         const COMBAT_TUNING = {
             speedMultiplier: 1.0,
@@ -810,7 +836,7 @@
                 moves: [ { name: 'Afterburner Burst', pp: 30, maxPp: 30 }, { name: 'Hull Scorch', pp: 25, maxPp: 25 }, { name: 'Evasive Roll', pp: 5, maxPp: 5 }, { name: 'Break Away', pp: 10, maxPp: 10 } ]
             },
             'dreadstar': {
-                name: "Fiji's Dreadstar", level: 70, type: 'HERO / DREAD', typeColor: 'bg-emerald-900 border-emerald-400',
+                name: "Battleship", level: 70, type: 'HERO / DREAD', typeColor: 'bg-emerald-900 border-emerald-400',
                 hp: 320, maxHp: 360, energy: 220, maxEnergy: 220,
                 desc: 'Hero dreadship with experimental drives. Abilities classified.',
                 video: 'character-animation(7).mp4', speed: 70, attackRange: 240, attackDamage: 32, attackCooldown: 2.0,
@@ -830,6 +856,17 @@
                     { name: 'Teleport', type: 'teleport', duration: 0, cooldown: 5 }
                 ],
                 moves: [ { name: 'Void Lances', pp: 10, maxPp: 10 }, { name: 'Phase Cut', pp: 6, maxPp: 6 }, { name: 'Slipstream', pp: 4, maxPp: 4 }, { name: 'Rift Bloom', pp: 3, maxPp: 3 } ]
+            },
+            'painship': {
+                name: 'Painship', level: 30, type: 'ASSAULT / SUPPORT', typeColor: 'bg-amber-900 border-amber-400',
+                hp: 140, maxHp: 160, energy: 100, maxEnergy: 120,
+                desc: 'Versatile support frigate with adaptive systems. Portraits vary by pilot.',
+                video: 'gold.mp4', speed: 110, attackRange: 150, attackDamage: 14, attackCooldown: 1.1,
+                spriteSvg: '<div class="w-full h-full flex items-center justify-center anim-breathe drop-shadow-[0_8px_8px_rgba(245,158,11,0.6)]"><img src="assets/painship.png" alt="Painship" class="painship-sprite w-[150px] h-[150px] object-contain" /></div>',
+                abilities: [
+                    { name: 'Overdrive', type: 'overdrive', duration: 4, cooldown: 10 }
+                ],
+                moves: [ { name: 'Pulse Shot', pp: 12, maxPp: 12 }, { name: 'Signal Jam', pp: 8, maxPp: 8 }, { name: 'Field Boost', pp: 6, maxPp: 6 }, { name: 'Hull Patch', pp: 4, maxPp: 4 } ]
             }
         };
 
@@ -939,14 +976,20 @@
             const key = e.key.toLowerCase();
             keys[key] = true;
 
-            if (key === 'e' && currentInteractable && gameState === 'EXPLORATION') {
-                startConversation(currentInteractable);
+            if (key === 'e') {
+                if (gameState === 'MISSION') {
+                    triggerEmpCycle();
+                    return;
+                }
+                if (currentInteractable && gameState === 'EXPLORATION') {
+                    startConversation(currentInteractable);
+                }
             }
             if (key === 't') {
                 if (gameState === 'MISSION') {
-                    const caster = pickHudUnit(selectedUnits || []);
-                    if (caster && caster.templateKey === 'dreadmaw') {
-                        startTeleportMode(caster);
+                    const casters = (selectedUnits || []).filter(u => u.templateKey === 'dreadmaw');
+                    if (casters.length > 0) {
+                        startTeleportMode(casters);
                         return;
                     }
                 }
@@ -1107,6 +1150,7 @@
             selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
             const hudUnit = pickHudUnit(selectedUnits);
             updateConsoleUI(hudUnit);
+            empCycleIndex = 0;
             stopAllVoices();
             if (selectedUnits.length === 1) {
                 playUnitVoice(selectedUnits[0]);
@@ -1137,26 +1181,32 @@
             return zones.find(z => z.id === id);
         }
 
-        function startTeleportMode(unit) {
-            const ability = unit.abilities && unit.abilities.find(a => a.type === 'teleport');
-            if (!ability) return;
-            const now = performance.now() / 1000;
-            const cdEnd = unit.abilityCooldowns[ability.type] || 0;
-            if (now < cdEnd) return;
+        function startTeleportMode(units) {
+            const list = Array.isArray(units) ? units : [units];
+            const available = list.filter(u => {
+                const ability = u.abilities && u.abilities.find(a => a.type === 'teleport');
+                if (!ability) return false;
+                const now = performance.now() / 1000;
+                const cdEnd = u.abilityCooldowns[ability.type] || 0;
+                return now >= cdEnd;
+            });
+            if (available.length === 0) return;
             teleportMode = true;
-            teleportUnit = unit;
+            teleportUnits = available;
+            teleportUnit = available[0];
             if (!teleportIndicator) {
                 teleportIndicator = document.createElement('div');
                 teleportIndicator.className = 'teleport-indicator';
                 world.appendChild(teleportIndicator);
             }
-            teleportIndicator.style.left = unit.x + 'px';
-            teleportIndicator.style.top = unit.y + 'px';
+            teleportIndicator.style.left = teleportUnit.x + 'px';
+            teleportIndicator.style.top = teleportUnit.y + 'px';
         }
 
         function cancelTeleportMode() {
             teleportMode = false;
             teleportUnit = null;
+            teleportUnits = [];
             if (teleportIndicator) {
                 teleportIndicator.remove();
                 teleportIndicator = null;
@@ -1164,48 +1214,46 @@
         }
 
         function handleTeleportClick(e) {
-            if (!teleportUnit) {
+            if (!teleportUnit || teleportUnits.length === 0) {
                 cancelTeleportMode();
                 return;
             }
             const rect = world.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            const ability = teleportUnit.abilities && teleportUnit.abilities.find(a => a.type === 'teleport');
-            if (!ability) {
-                cancelTeleportMode();
-                return;
-            }
             const now = performance.now() / 1000;
-            const cdEnd = teleportUnit.abilityCooldowns[ability.type] || 0;
-            if (now < cdEnd) {
-                cancelTeleportMode();
-                return;
-            }
-            teleportUnit.abilityCooldowns[ability.type] = now + ability.cooldown;
-            teleportUnit.abilityEnds[ability.type] = now;
+            teleportUnits.forEach((unit, idx) => {
+                const ability = unit.abilities && unit.abilities.find(a => a.type === 'teleport');
+                if (!ability) return;
+                const cdEnd = unit.abilityCooldowns[ability.type] || 0;
+                if (now < cdEnd) return;
+                unit.abilityCooldowns[ability.type] = now + ability.cooldown;
+                unit.abilityEnds[ability.type] = now;
 
-            const flash1 = document.createElement('div');
-            flash1.className = 'teleport-flash';
-            flash1.style.left = teleportUnit.x + 'px';
-            flash1.style.top = teleportUnit.y + 'px';
-            world.appendChild(flash1);
-            setTimeout(() => flash1.remove(), 500);
+                const flash1 = document.createElement('div');
+                flash1.className = 'teleport-flash';
+                flash1.style.left = unit.x + 'px';
+                flash1.style.top = unit.y + 'px';
+                world.appendChild(flash1);
+                setTimeout(() => flash1.remove(), 500);
 
-            teleportUnit.x = x;
-            teleportUnit.y = y;
-            teleportUnit.targetX = x;
-            teleportUnit.targetY = y;
-            teleportUnit.state = 'IDLE';
-            teleportUnit.element.style.left = teleportUnit.x + 'px';
-            teleportUnit.element.style.top = teleportUnit.y + 'px';
+                const offsetX = (idx % 3) * 30 - 30;
+                const offsetY = Math.floor(idx / 3) * 30 - 30;
+                unit.x = x + offsetX;
+                unit.y = y + offsetY;
+                unit.targetX = unit.x;
+                unit.targetY = unit.y;
+                unit.state = 'IDLE';
+                unit.element.style.left = unit.x + 'px';
+                unit.element.style.top = unit.y + 'px';
 
-            const flash2 = document.createElement('div');
-            flash2.className = 'teleport-flash';
-            flash2.style.left = x + 'px';
-            flash2.style.top = y + 'px';
-            world.appendChild(flash2);
-            setTimeout(() => flash2.remove(), 500);
+                const flash2 = document.createElement('div');
+                flash2.className = 'teleport-flash';
+                flash2.style.left = unit.x + 'px';
+                flash2.style.top = unit.y + 'px';
+                world.appendChild(flash2);
+                setTimeout(() => flash2.remove(), 500);
+            });
 
             updateAbilityButtons(teleportUnit);
             cancelTeleportMode();
@@ -1409,6 +1457,34 @@
             }
         }
 
+        function playPainshipClickSfx() {
+            stopAllVoices();
+            const sfx = document.getElementById('painship-sfx');
+            if (!sfx) return;
+            const files = ['collegemoney.mp3', 'tightspaces.mp3', 'joinup.mp3', 'beall.mp3'];
+            sfx.src = files[painshipSfxIndex];
+            painshipSfxIndex = (painshipSfxIndex + 1) % files.length;
+            sfx.currentTime = 0;
+            sfx.load();
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function playDreadmawClickSfx() {
+            stopAllVoices();
+            const sfx = document.getElementById('dreadmaw-sfx');
+            if (!sfx) return;
+            sfx.src = 'starcraft-2-attack.mp3';
+            sfx.currentTime = 0;
+            sfx.load();
+            const playPromise = sfx.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        }
+
         function playUnitVoice(unit) {
             if (!unit) return;
             if (unit.templateKey === 'cultist') {
@@ -1420,10 +1496,16 @@
             if (unit.templateKey === 'marine') {
                 playMarineClickSfx();
             }
+            if (unit.templateKey === 'painship') {
+                playPainshipClickSfx();
+            }
+            if (unit.templateKey === 'dreadmaw') {
+                playDreadmawClickSfx();
+            }
         }
 
         function stopAllVoices() {
-            ['cultist-sfx', 'gdrill-sfx', 'marine-sfx', 'hud-dialog-sfx'].forEach(id => {
+            ['cultist-sfx', 'gdrill-sfx', 'marine-sfx', 'painship-sfx', 'dreadmaw-sfx', 'hud-dialog-sfx'].forEach(id => {
                 const audio = document.getElementById(id);
                 if (!audio) return;
                 audio.pause();
@@ -1658,6 +1740,7 @@
             selectedUnits = [...unitsToSelect];
             selectedUnits.forEach(unit => unit.element.classList.add('unit-selected'));
             updateConsoleUI(pickHudUnit(selectedUnits));
+            empCycleIndex = 0;
         }
 
         function selectUnit(unitData, element) {
@@ -1975,6 +2058,13 @@
                                 mawImg.style.transform = `scaleX(${flip})`;
                             }
                         }
+                        if (unit.templateKey === 'painship') {
+                            const painImg = unit.element.querySelector('.painship-sprite');
+                            if (painImg) {
+                                const flip = dx > 0 ? -1 : 1;
+                                painImg.style.transform = `scaleX(${flip})`;
+                            }
+                        }
                     }
                 }
             });
@@ -2092,6 +2182,17 @@
                 btn.disabled = !enabled;
                 btn.classList.toggle('opacity-50', !enabled);
             });
+        }
+
+        function triggerEmpCycle() {
+            if (gameState !== 'MISSION') return;
+            const empUnits = (selectedUnits || []).filter(u => u.abilities && u.abilities.some(a => a.type === 'emp'));
+            if (empUnits.length === 0) return;
+            if (empCycleIndex >= empUnits.length) empCycleIndex = 0;
+            const unit = empUnits[empCycleIndex];
+            empCycleIndex += 1;
+            const ability = unit.abilities.find(a => a.type === 'emp');
+            useAbility(unit, ability);
         }
 
         function summonUnit(type) {
@@ -2589,6 +2690,9 @@
             if (unitData.templateKey === 'dreadmaw') {
                 dreadmawPortraitToggle = !dreadmawPortraitToggle;
                 portraitVideo.src = dreadmawPortraitToggle ? 'character-animation(9).mp4' : 'character-animation(8).mp4';
+            } else if (unitData.templateKey === 'painship') {
+                painshipPortraitIndex = (painshipPortraitIndex + 1) % painshipPortraits.length;
+                portraitVideo.src = painshipPortraits[painshipPortraitIndex];
             } else {
                 portraitVideo.src = unitData.video || '';
             }
@@ -2597,7 +2701,9 @@
             if(playPromise !== undefined) playPromise.catch(e => console.log("Autoplay prevented"));
             startPortraitStaticCycle();
             portraitVideo.onended = () => {
-                if (!unitData.video) return;
+                const isDreadmaw = unitData.templateKey === 'dreadmaw';
+                const isPainship = unitData.templateKey === 'painship';
+                if (!unitData.video && !isDreadmaw && !isPainship) return;
                 portraitVideo.pause();
                 portraitStatic.classList.remove('hidden');
                 portraitStatic.style.animation = 'none';
@@ -2605,7 +2711,17 @@
                 portraitStatic.style.animation = '';
                 setTimeout(() => {
                     portraitStatic.classList.add('hidden');
-                    portraitVideo.currentTime = 0;
+                    if (isDreadmaw) {
+                        dreadmawPortraitToggle = !dreadmawPortraitToggle;
+                        portraitVideo.src = dreadmawPortraitToggle ? 'character-animation(9).mp4' : 'character-animation(8).mp4';
+                        portraitVideo.load();
+                    } else if (isPainship) {
+                        painshipPortraitIndex = (painshipPortraitIndex + 1) % painshipPortraits.length;
+                        portraitVideo.src = painshipPortraits[painshipPortraitIndex];
+                        portraitVideo.load();
+                    } else {
+                        portraitVideo.currentTime = 0;
+                    }
                     const replayPromise = portraitVideo.play();
                     if (replayPromise !== undefined) replayPromise.catch(() => {});
                 }, 350);
@@ -2635,6 +2751,16 @@
             stopPortraitStaticCycle();
         }
 
+        function getAbilityDesc(ability) {
+            if (!ability) return '';
+            if (ability.type === 'shield') return 'Reduces incoming damage for nearby allies while G-Drill cannot attack.';
+            if (ability.type === 'smoke') return 'Reduces incoming damage for a short time.';
+            if (ability.type === 'emp') return 'Freezes all units in a radius for 5 seconds.';
+            if (ability.type === 'teleport') return 'Teleport to a target location (T hotkey).';
+            if (ability.type === 'overdrive') return 'Temporarily boosts allied performance.';
+            return ability.name || '';
+        }
+
         function updateAbilityButtons(unit) {
             const abilities = unit && unit.abilities ? unit.abilities : [];
             const now = performance.now() / 1000;
@@ -2646,6 +2772,7 @@
                     btn.innerText = '---';
                     btn.disabled = true;
                     btn.onclick = null;
+                    btn.title = '';
                     return;
                 }
                 const cdEnd = unit.abilityCooldowns[ability.type] || 0;
@@ -2653,6 +2780,7 @@
                 btn.innerText = remain > 0 ? ability.name + ' (' + Math.ceil(remain) + 's)' : ability.name;
                 btn.disabled = remain > 0;
                 btn.onclick = () => useAbility(unit, ability);
+                btn.title = getAbilityDesc(ability);
             });
         }
 
