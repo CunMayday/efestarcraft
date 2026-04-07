@@ -367,10 +367,6 @@
             box-shadow: 0 0 18px rgba(74, 222, 128, 0.35);
         }
 
-        #skindex-video-frame {
-            max-height: 45vh;
-        }
-
         @media (max-width: 900px) {
             #console {
                 height: auto;
@@ -415,9 +411,6 @@
             }
             #skindex-details {
                 max-height: 42vh;
-            }
-            #skindex-video-frame {
-                max-height: 38vh;
             }
         }
     </style>
@@ -475,10 +468,9 @@
                     </div>
                     <div class="text-xs text-slate-400 font-bold">LV <span id="skindex-level">--</span></div>
                 </div>
-                <div id="skindex-video-frame" class="relative w-full bg-black border border-slate-700 rounded-lg overflow-hidden" style="aspect-ratio: 16 / 9;">
+                <div class="relative w-full aspect-video bg-black border border-slate-700 rounded-lg overflow-hidden">
                     <div id="skindex-profile-placeholder" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">No profile selected</div>
-                    <video id="skindex-video" class="w-full h-full object-contain bg-black hidden" muted playsinline preload="auto"></video>
-                    <div id="skindex-scanlines" class="scanlines hidden"></div>
+                    <video id="skindex-video" class="w-full h-full object-cover hidden" muted playsinline preload="auto"></video>
                 </div>
                 <div id="skindex-desc" class="text-sm text-slate-300 italic leading-snug">Choose a unit to view full stats and profile.</div>
                 <div class="grid grid-cols-2 gap-2 text-xs text-slate-200">
@@ -764,8 +756,6 @@
         const skindexMoves = document.getElementById('skindex-moves');
         const skindexVideo = document.getElementById('skindex-video');
         const skindexProfilePlaceholder = document.getElementById('skindex-profile-placeholder');
-        const skindexScanlines = document.getElementById('skindex-scanlines');
-        const skindexVideoFrame = document.getElementById('skindex-video-frame');
         const hudDialogPanel = document.getElementById('hud-dialog-panel');
         const hudDialogName = document.getElementById('hud-dialog-name');
         const hudDialogText = document.getElementById('hud-dialog-text');
@@ -1859,19 +1849,8 @@
                 if (template.video) {
                     skindexProfilePlaceholder.classList.add('hidden');
                     skindexVideo.classList.remove('hidden');
-                    if (skindexScanlines) skindexScanlines.classList.remove('hidden');
                     skindexVideo.src = template.video;
                     skindexVideo.load();
-                    skindexVideo.onloadedmetadata = () => {
-                        if (!skindexVideoFrame) return;
-                        const aspect = skindexVideo.videoWidth && skindexVideo.videoHeight
-                            ? (skindexVideo.videoWidth / skindexVideo.videoHeight)
-                            : (16 / 9);
-                        skindexVideoFrame.style.aspectRatio = aspect.toFixed(3) + ' / 1';
-                        const maxHeight = Math.floor(window.innerHeight * 0.45);
-                        const desiredHeight = Math.floor(skindexVideoFrame.clientWidth / aspect);
-                        skindexVideoFrame.style.height = Math.min(desiredHeight, maxHeight) + 'px';
-                    };
                     const playPromise = skindexVideo.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(() => {});
@@ -1879,12 +1858,7 @@
                 } else {
                     skindexVideo.pause();
                     skindexVideo.classList.add('hidden');
-                    if (skindexScanlines) skindexScanlines.classList.add('hidden');
                     skindexProfilePlaceholder.classList.remove('hidden');
-                    if (skindexVideoFrame) {
-                        skindexVideoFrame.style.aspectRatio = '16 / 9';
-                        skindexVideoFrame.style.height = '';
-                    }
                 }
             }
 
@@ -1907,9 +1881,6 @@
             skindexOverlay.classList.add('hidden');
             if (skindexVideo) {
                 skindexVideo.pause();
-            }
-            if (skindexScanlines) {
-                skindexScanlines.classList.add('hidden');
             }
         }
 

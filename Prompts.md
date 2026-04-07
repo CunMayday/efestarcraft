@@ -1244,3 +1244,90 @@ This document tracks the conversation history, including the user's prompts, the
 **AI Agent:** Codex
 
 **Summary:** Added Dreadmaw click SFX using `starcraft-2-attack.mp3`.
+
+---
+
+## Prompt 129
+**User:** "make it so the enemy does not attack/ move until you move"
+
+**AI Agent:** Codex
+
+**Summary:** Added a mission flag so enemies stay idle and stop summoning/pressuring until the player issues a move order or teleport.
+
+---
+
+## Prompt 130
+**User:** "make it so if i press A, it selects all of my units."
+
+**AI Agent:** Codex
+
+**Summary:** Added A hotkey to select all units in mission mode.
+
+---
+
+## Checkpoint 31
+**Files:** `index.checkpoint-031.html`
+**Notes:** Snapshot after enemy idle-until-move and A select-all hotkey.
+
+---
+
+## Prompt 131
+**User:** "make it so when i press A, it selcts all units, including newley spawned ones"
+
+**AI Agent:** Codex
+
+**Summary:** Updated select-all to include all current player units (including newly spawned).
+
+---
+
+## Checkpoint 32
+**Files:** `index.checkpoint-032.html`
+**Notes:** Snapshot after select-all includes newly spawned units.
+
+---
+
+## Prompt 132
+**User:** "the game does not work on mobile, so, when i open the game on mobile (or PC) i want there to be a option to \"Open Skindex\". In that, It has a grid of every unit. if I clicl on a unit, it will show their stats, their profile, etc. It will also play a voice line."
+
+**AI Agent:** Codex
+
+**Summary:** Added a Skindex overlay with a unit grid, detail panel (stats, profile video, abilities/moves), and voice-line playback, plus a new Open Skindex button in the top-right controls.
+
+---
+
+## Checkpoint 33
+**Files:** `index.checkpoint-033.html`
+**Notes:** Snapshot after adding the Skindex overlay and Open Skindex button.
+
+---
+
+## Prompt 133
+**User:** "this is good, but the character portraits are too streched"
+
+**AI Agent:** Codex
+
+**Summary:** Switched Skindex profile video to `object-contain` to prevent stretching.
+
+---
+
+## Prompt 134
+**User:** "make sure to add the \"video lines\" that are in the main game. now the portraits are too small"
+
+**AI Agent:** Codex
+
+**Summary:** Switched Skindex portraits back to `object-cover` for full-size display and added scanline overlay matching the main HUD portrait.
+
+---
+
+## Prompt 135
+**User:** "they are still stretched. flight lead is the only one that is safe"
+
+**AI Agent:** Codex
+
+**Summary:** Set Skindex portraits to `object-contain` and dynamically size the portrait frame based on each video’s native aspect ratio to prevent stretching while keeping them large.
+
+---
+
+## Checkpoint 34
+**Files:** `index.checkpoint-034.html`
+**Notes:** Snapshot after fixing Skindex portrait stretching with dynamic aspect ratio sizing.
