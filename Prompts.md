@@ -1337,6 +1337,15 @@ This document tracks the conversation history, including the user's prompts, the
 
 ---
 
+## Prompt 137
+**User:** "i cant see the portaits on mobile"
+
+**AI Agent:** Codex
+
+**Summary:** Prevented the Skindex portrait frame from shrinking in flex layout, enabled scroll inside details, and increased mobile max-height so the portrait stays visible.
+
+---
+
 ## Checkpoint 34
 **Files:** `index.checkpoint-034.html`
 **Notes:** Snapshot after fixing Skindex portrait stretching with dynamic aspect ratio sizing.

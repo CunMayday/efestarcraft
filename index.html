@@ -371,6 +371,12 @@
             max-height: 45vh;
             aspect-ratio: var(--skindex-aspect, 16 / 9);
             min-height: 220px;
+            flex: 0 0 auto;
+        }
+
+        #skindex-details {
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         @media (max-width: 900px) {
@@ -416,7 +422,7 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             #skindex-details {
-                max-height: 42vh;
+                max-height: 60vh;
             }
             #skindex-video-frame {
                 max-height: 38vh;
