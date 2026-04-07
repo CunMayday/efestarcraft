@@ -1328,6 +1328,15 @@ This document tracks the conversation history, including the user's prompts, the
 
 ---
 
+## Prompt 136
+**User:** "i cant see the portaits on mobile"
+
+**AI Agent:** Codex
+
+**Summary:** Stabilized Skindex portrait sizing on mobile with a CSS aspect-ratio variable, min-heights, and removed fragile JS height calculations.
+
+---
+
 ## Checkpoint 34
 **Files:** `index.checkpoint-034.html`
 **Notes:** Snapshot after fixing Skindex portrait stretching with dynamic aspect ratio sizing.

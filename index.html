@@ -369,6 +369,8 @@
 
         #skindex-video-frame {
             max-height: 45vh;
+            aspect-ratio: var(--skindex-aspect, 16 / 9);
+            min-height: 220px;
         }
 
         @media (max-width: 900px) {
@@ -418,6 +420,7 @@
             }
             #skindex-video-frame {
                 max-height: 38vh;
+                min-height: 180px;
             }
         }
     </style>
@@ -1867,10 +1870,8 @@
                         const aspect = skindexVideo.videoWidth && skindexVideo.videoHeight
                             ? (skindexVideo.videoWidth / skindexVideo.videoHeight)
                             : (16 / 9);
-                        skindexVideoFrame.style.aspectRatio = aspect.toFixed(3) + ' / 1';
-                        const maxHeight = Math.floor(window.innerHeight * 0.45);
-                        const desiredHeight = Math.floor(skindexVideoFrame.clientWidth / aspect);
-                        skindexVideoFrame.style.height = Math.min(desiredHeight, maxHeight) + 'px';
+                        skindexVideoFrame.style.setProperty('--skindex-aspect', aspect.toFixed(3) + ' / 1');
+                        skindexVideoFrame.style.height = '';
                     };
                     const playPromise = skindexVideo.play();
                     if (playPromise !== undefined) {
@@ -1882,7 +1883,7 @@
                     if (skindexScanlines) skindexScanlines.classList.add('hidden');
                     skindexProfilePlaceholder.classList.remove('hidden');
                     if (skindexVideoFrame) {
-                        skindexVideoFrame.style.aspectRatio = '16 / 9';
+                        skindexVideoFrame.style.setProperty('--skindex-aspect', '16 / 9');
                         skindexVideoFrame.style.height = '';
                     }
                 }
